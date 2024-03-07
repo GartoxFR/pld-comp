@@ -13,8 +13,7 @@ namespace ir {
         virtual void print(std::ostream& out) const = 0;
         virtual void accept(Visitor& visitor) override = 0;
 
-        friend inline std::ostream& operator<<(std::ostream& out,
-                                               const Instruction& self) {
+        friend inline std::ostream& operator<<(std::ostream& out, const Instruction& self) {
             self.print(out);
             return out;
         }
@@ -22,8 +21,7 @@ namespace ir {
 
     template <typename InstrT>
         requires std::derived_from<InstrT, Instruction>
-    inline std::ostream& operator<<(std::ostream& out,
-                                    const Instruction& self) {
+    inline std::ostream& operator<<(std::ostream& out, const Instruction& self) {
         self.print(out);
         return out;
     }
@@ -37,8 +35,7 @@ namespace ir {
             return ident;
         }
 
-        friend inline std::ostream& operator<<(std::ostream& out,
-                                               const Variable& self) {
+        friend inline std::ostream& operator<<(std::ostream& out, const Variable& self) {
             return out << self.getIdent();
         }
 
@@ -54,8 +51,7 @@ namespace ir {
             return id;
         }
 
-        friend inline std::ostream& operator<<(std::ostream& out,
-                                               const Temporary& self) {
+        friend inline std::ostream& operator<<(std::ostream& out, const Temporary& self) {
             return out << "t" << self.getId();
         }
 
@@ -71,8 +67,7 @@ namespace ir {
             return value;
         }
 
-        friend inline std::ostream& operator<<(std::ostream& out,
-                                               const Immediate& self) {
+        friend inline std::ostream& operator<<(std::ostream& out, const Immediate& self) {
             return out << self.getValue();
         }
 
@@ -112,15 +107,11 @@ namespace ir {
 
     class BinaryOp : public Instruction {
       public:
-        BinaryOp(const Place& destination, const Operand& left,
-                 const Operand& right, BinaryOpKind operation) :
-            Instruction(),
-            destination(destination), left(left), right(right),
-            operation(operation) {}
+        BinaryOp(const Place& destination, const Operand& left, const Operand& right, BinaryOpKind operation) :
+            Instruction(), destination(destination), left(left), right(right), operation(operation) {}
 
         void print(std::ostream& out) const override {
-            out << destination << " := " << left << " " << operation << " "
-                << right;
+            out << destination << " := " << left << " " << operation << " " << right;
         }
 
         void accept(Visitor& visitor) override;

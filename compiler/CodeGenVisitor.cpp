@@ -18,8 +18,7 @@ antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext* ctx) {
     return 0;
 }
 
-antlrcpp::Any
-CodeGenVisitor::visitReturn_stmt(ifccParser::Return_stmtContext* ctx) {
+antlrcpp::Any CodeGenVisitor::visitReturn_stmt(ifccParser::Return_stmtContext* ctx) {
     int retVar = std::any_cast<int>(visit(ctx->expr()));
     loadVariable(retVar);
     return 0;
@@ -28,7 +27,7 @@ CodeGenVisitor::visitReturn_stmt(ifccParser::Return_stmtContext* ctx) {
 std::any CodeGenVisitor::visitConst(ifccParser::ConstContext* ctx) {
     int res = nextTemp();
     int val = std::stoi(ctx->CONST()->getText());
-    std::cout << "    movl $" << val << ", -" << res <<"(%rsp)\n";
+    std::cout << "    movl $" << val << ", -" << res << "(%rsp)\n";
 
     return res;
 }
@@ -40,8 +39,7 @@ std::any CodeGenVisitor::visitVar(ifccParser::VarContext* ctx) {
 std::any CodeGenVisitor::visitAssign_stmt(ifccParser::Assign_stmtContext* ctx) {
     int temp = std::any_cast<int>(visit(ctx->expr()));
     loadVariable(temp);
-    std::cout << "    movl %eax, -" << m_symbolTable[ctx->IDENT()->getText()]
-              << "(%rsp)\n";
+    std::cout << "    movl %eax, -" << m_symbolTable[ctx->IDENT()->getText()] << "(%rsp)\n";
     return 0;
 }
 
@@ -87,7 +85,7 @@ std::any CodeGenVisitor::visitProductOp(ifccParser::ProductOpContext* ctx) {
     return res;
 }
 
-std::any CodeGenVisitor::visitUnarySumOp(ifccParser::UnarySumOpContext *ctx) {
+std::any CodeGenVisitor::visitUnarySumOp(ifccParser::UnarySumOpContext* ctx) {
     int operand = std::any_cast<int>(visit(ctx->expr()));
     // Nothing to do for unary +
     if (ctx->SUM_OP()->getText() == "+")

@@ -19,23 +19,18 @@
 using namespace antlr4;
 using namespace std;
 
-class Test : public ir::Visitor {
-
-};
-
 int main(int argn, const char** argv) {
     using namespace ir;
 
-    std::unique_ptr<Copy> i1 =
-        std::make_unique<Copy>(Temporary(3), Immediate(2));
+    std::unique_ptr<Copy> i1 = std::make_unique<Copy>(Temporary(3), Immediate(2));
 
-    auto vis = visitor{
-        [&](Copy& copy) -> std::optional<int> { return {}; },
-        [&](BinaryOp& op) -> std::optional<int> { return 5; },
-    };
-    Test t;
-    ir::visit(t, *i1);
-    auto i = ir::visit(vis, *i1);
+    auto i = ir::visit(
+        visitor{
+            [&](Copy& copy) -> std::optional<int> { return {}; },
+            [&](BinaryOp& op) -> std::optional<int> { return 5; },
+        },
+        *i1
+    );
 
     cout << i.value_or(0) << endl;
     ir::visit(visitor{[&](Copy& copy) { cout << copy << endl; }}, *i1);

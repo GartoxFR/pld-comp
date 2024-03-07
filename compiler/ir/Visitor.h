@@ -6,8 +6,7 @@ namespace ir {
     namespace detail {
 
         template <typename T, typename... Ts>
-            requires std::derived_from<T, Visitable> &&
-            (... && std::derived_from<Ts, Visitable>)
+            requires std::derived_from<T, Visitable> && (... && std::derived_from<Ts, Visitable>)
         class TemplateVisitor : TemplateVisitor<Ts...> {
           public:
             virtual void visit(T& t) {}
@@ -37,8 +36,9 @@ namespace ir {
     template <class T, class... Ts>
     concept AllSameReturn =
         (... and
-         std::same_as<typename decompose<decltype(&T::operator())>::ret_type,
-                      typename decompose<decltype(&Ts::operator())>::ret_type>);
+         std::same_as<
+             typename decompose<decltype(&T::operator())>::ret_type,
+             typename decompose<decltype(&Ts::operator())>::ret_type>);
 
     template <class T>
     class visitor_return {
@@ -79,20 +79,14 @@ namespace ir {
 
     template <class T>
     class visitor<T>
-        : public Visitor,
-          public visitor_return<
-              typename decompose<decltype(&T::operator())>::ret_type>,
-          T {
+        : public Visitor, public visitor_return<typename decompose<decltype(&T::operator())>::ret_type>, T {
 
       public:
-        using visitor_return<
-            typename decompose<decltype(&T::operator())>::ret_type>::has_return;
+        using visitor_return<typename decompose<decltype(&T::operator())>::ret_type>::has_return;
         visitor(T t) : T(t) {}
         void visit(decompose<decltype(&T::operator())>::arg_type arg) override {
             if constexpr (has_return) {
-                visitor_return<typename decompose<
-                    decltype(&T::operator())>::ret_type>::ret =
-                    T::operator()(arg);
+                visitor_return<typename decompose<decltype(&T::operator())>::ret_type>::ret = T::operator()(arg);
             } else {
                 T::operator()(arg);
             }
@@ -111,9 +105,7 @@ namespace ir {
         visited.accept(visitor);
 
         // If VisitorT is a visitor from the overloaded template
-        if constexpr (requires {
-                          std::remove_reference_t<VisitorT>::has_return;
-                      }) {
+        if constexpr (requires { std::remove_reference_t<VisitorT>::has_return; }) {
             // And all the lamda have a return type
             if constexpr (std::remove_reference_t<VisitorT>::has_return) {
                 return visitor.getRet();

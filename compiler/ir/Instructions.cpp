@@ -10,5 +10,3 @@ void BinaryOp::accept(Visitor& visitor) {
 void Copy::accept(Visitor& visitor) {
     visitor.visit(*this);
 }
-
-
