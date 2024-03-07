@@ -1,0 +1,17 @@
+# Build garbage
+build/
+generated
+
+compiler/*.mk
+/compiler/ifcc
+
+compile_commands.json
+
+# Test garbage
+ifcc-test-output
+
+# IDE stuff
+.cache/
+.vscode/
+.idea/
+
