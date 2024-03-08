@@ -36,10 +36,24 @@ std::any CodeGenVisitor::visitVar(ifccParser::VarContext* ctx) {
     return m_symbolTable[ctx->IDENT()->getText()];
 }
 
+std::any CodeGenVisitor::visitInitializer(ifccParser::InitializerContext *ctx) {
+    // No initializer -> nothing to do
+    if (!ctx->expr()) {
+        return 0;
+    }
+
+    auto ident = ctx->IDENT()->getText();
+    int res = std::any_cast<int>(visit(ctx->expr()));
+    loadVariable(res);
+    storeVariable(m_symbolTable[ident]);
+
+    return 0;
+}
+
 std::any CodeGenVisitor::visitAssign_stmt(ifccParser::Assign_stmtContext* ctx) {
     int temp = std::any_cast<int>(visit(ctx->expr()));
     loadVariable(temp);
-    std::cout << "    movl %eax, -" << m_symbolTable[ctx->IDENT()->getText()] << "(%rsp)\n";
+    storeVariable(m_symbolTable[ctx->IDENT()->getText()]);
     return 0;
 }
 

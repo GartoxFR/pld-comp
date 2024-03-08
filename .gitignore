@@ -3,7 +3,7 @@ build/
 generated
 
 compiler/*.mk
-/compiler/ifcc
+compiler/ifcc
 
 compile_commands.json
 

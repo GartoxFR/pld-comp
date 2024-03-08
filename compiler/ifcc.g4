@@ -9,7 +9,9 @@ stmt : assign_stmt | declare_stmt ;
 
 assign_stmt : IDENT '=' expr ';' ;
 
-declare_stmt : INT IDENT ';' ;
+declare_stmt : INT idents+=initializer (',' idents+=initializer)* ';' ;
+
+initializer : IDENT ('=' expr | ) ;
 
 expr: SUM_OP expr # unarySumOp
     | expr PRODUCT_OP expr # productOp

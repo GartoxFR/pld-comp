@@ -17,17 +17,18 @@ std::any SymbolTableVisitor::visitVar(ifccParser::VarContext* context) {
 }
 
 std::any SymbolTableVisitor::visitDeclare_stmt(ifccParser::Declare_stmtContext* context) {
-    std::string ident = context->IDENT()->getText();
+    for (auto initializer : context->idents) {
+        std::string ident = initializer->IDENT()->getText();
 
-    if (m_symbolTable.contains(ident)) {
-        std::cerr << "Erreur: Variable " << ident << " déjà déclarée" << std::endl;
+        if (m_symbolTable.contains(ident)) {
+            std::cerr << "Erreur: Variable " << ident << " déjà déclarée" << std::endl;
 
-        success = false;
-        return 0;
+            success = false;
+            return 0;
+        }
+
+        m_symbolTable.declare(std::move(ident));
     }
-
-    m_symbolTable.declare(std::move(ident));
-
     return 0;
 }
 
