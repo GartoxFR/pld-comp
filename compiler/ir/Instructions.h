@@ -34,9 +34,7 @@ namespace ir {
       public:
         explicit Variable(const std::string& ident) : ident(ident) {}
 
-        const std::string& getIdent() const {
-            return ident;
-        }
+        const std::string& getIdent() const { return ident; }
 
         friend inline std::ostream& operator<<(std::ostream& out, const Variable& self) {
             return out << self.getIdent();
@@ -51,9 +49,7 @@ namespace ir {
       public:
         explicit Temporary(uint32_t id) : id(id) {}
 
-        uint32_t getId() const {
-            return id;
-        }
+        uint32_t getId() const { return id; }
 
         friend inline std::ostream& operator<<(std::ostream& out, const Temporary& self) {
             return out << "t" << self.getId();
@@ -68,9 +64,7 @@ namespace ir {
       public:
         explicit Immediate(uint32_t value) : value(value) {}
 
-        uint32_t getValue() const {
-            return value;
-        }
+        uint32_t getValue() const { return value; }
 
         friend inline std::ostream& operator<<(std::ostream& out, const Immediate& self) {
             return out << self.getValue();
@@ -129,18 +123,10 @@ namespace ir {
 
         void accept(Visitor& visitor) override;
 
-        const Place& getDestination() const {
-            return destination;
-        }
-        const Operand& getLeft() const {
-            return left;
-        }
-        const Operand& getRight() const {
-            return right;
-        }
-        BinaryOpKind getOperation() const {
-            return operation;
-        }
+        const Place& getDestination() const { return destination; }
+        const Operand& getLeft() const { return left; }
+        const Operand& getRight() const { return right; }
+        BinaryOpKind getOperation() const { return operation; }
 
       private:
         Place destination;
@@ -155,17 +141,11 @@ namespace ir {
         Copy(const Place& destination, const Operand& source) :
             Instruction(), destination(destination), source(source) {}
 
-        void print(std::ostream& out) const override {
-            out << destination << " := " << source;
-        }
+        void print(std::ostream& out) const override { out << destination << " := " << source; }
 
-        const Place& getDestination() const {
-            return destination;
-        }
+        const Place& getDestination() const { return destination; }
 
-        const Operand& getSource() const {
-            return source;
-        }
+        const Operand& getSource() const { return source; }
 
         void accept(Visitor& visitor) override;
 

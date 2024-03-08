@@ -32,11 +32,9 @@ std::any CodeGenVisitor::visitConst(ifccParser::ConstContext* ctx) {
     return res;
 }
 
-std::any CodeGenVisitor::visitVar(ifccParser::VarContext* ctx) {
-    return m_symbolTable[ctx->IDENT()->getText()];
-}
+std::any CodeGenVisitor::visitVar(ifccParser::VarContext* ctx) { return m_symbolTable[ctx->IDENT()->getText()]; }
 
-std::any CodeGenVisitor::visitInitializer(ifccParser::InitializerContext *ctx) {
+std::any CodeGenVisitor::visitInitializer(ifccParser::InitializerContext* ctx) {
     // No initializer -> nothing to do
     if (!ctx->expr()) {
         return 0;
@@ -57,13 +55,9 @@ std::any CodeGenVisitor::visitAssign_stmt(ifccParser::Assign_stmtContext* ctx) {
     return 0;
 }
 
-void CodeGenVisitor::loadVariable(int temp) {
-    std::cout << "    movl -" << temp << "(%rsp), %eax\n";
-}
+void CodeGenVisitor::loadVariable(int temp) { std::cout << "    movl -" << temp << "(%rsp), %eax\n"; }
 
-void CodeGenVisitor::storeVariable(int temp) {
-    std::cout << "    movl %eax, -" << temp << "(%rsp)\n";
-}
+void CodeGenVisitor::storeVariable(int temp) { std::cout << "    movl %eax, -" << temp << "(%rsp)\n"; }
 
 std::any CodeGenVisitor::visitSumOp(ifccParser::SumOpContext* ctx) {
     int res = nextTemp();

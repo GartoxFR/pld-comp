@@ -25,7 +25,6 @@ class SymbolTableVisitor : public ifccBaseVisitor {
     }
 
   private:
-
     SymbolTable& m_symbolTable;
     std::set<std::string> m_usedSymbols;
     bool success = true;

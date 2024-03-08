@@ -52,9 +52,7 @@ namespace ir {
     class visitor_return<T> {
       public:
         static constexpr bool has_return = true;
-        auto&& getRet() {
-            return std::move(ret);
-        }
+        auto&& getRet() { return std::move(ret); }
 
       protected:
         T ret;

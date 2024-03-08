@@ -60,7 +60,10 @@ namespace ir {
         const auto& terminator() const { return m_terminator; }
 
         friend inline std::ostream& operator<<(std::ostream& out, const BasicBlock& self) {
-            return out << std::format("BasicBlock(label = {}, instructionCount = {}, terminated = {})", self.label(), self.instructions().size(), bool(self.terminator()));
+            return out << std::format(
+                       "BasicBlock(label = {}, instructionCount = {}, terminated = {})", self.label(),
+                       self.instructions().size(), bool(self.terminator())
+                   );
         }
 
       private:
