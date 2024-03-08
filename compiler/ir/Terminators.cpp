@@ -3,6 +3,6 @@
 
 using namespace ir;
 
-void Terminator::accept(Visitor& visitor) {
+void BasicJump::accept(Visitor& visitor) {
     visitor.visit(*this);
 }

@@ -28,14 +28,14 @@ namespace ir {
     }
 
     class BasicJump : public Terminator {
+      public:
+        explicit BasicJump(BasicBlock* target) : target(target) {}
+
         void accept(Visitor& visitor) override;
 
-        void print(std::ostream& out) const override {
-            out << "jump";
-        }
+        void print(std::ostream& out) const override { out << "jump " << target->label(); }
 
       private:
         BasicBlock* target;
     };
-
 }
