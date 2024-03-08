@@ -12,28 +12,11 @@
 #include "generated/ifccBaseVisitor.h"
 
 #include "CodeGenVisitor.h"
-#include "ir/Instructions.h"
-#include "ir/Visitor.h"
-#include "ir/Visitable.h"
 
 using namespace antlr4;
 using namespace std;
 
 int main(int argn, const char** argv) {
-    using namespace ir;
-
-    std::unique_ptr<Copy> i1 = std::make_unique<Copy>(Temporary(3), Immediate(2));
-
-    auto i = ir::visit(
-        visitor{
-            [&](Copy& copy) -> std::optional<int> { return {}; },
-            [&](BinaryOp& op) -> std::optional<int> { return 5; },
-        },
-        *i1
-    );
-
-    cout << i.value_or(0) << endl;
-    ir::visit(visitor{[&](Copy& copy) { cout << copy << endl; }}, *i1);
 
     stringstream in;
     if (argn == 2) {
@@ -63,7 +46,9 @@ int main(int argn, const char** argv) {
         exit(1);
     }
 
-    SymbolTableVisitor symbolTableVisitor;
+    SymbolTable symbolTable;
+    SymbolTableVisitor symbolTableVisitor{symbolTable};
+
     if (!symbolTableVisitor.createSymbolTable(tree)) {
         cerr << "Des erreurs sont survenus lors de la création de la table des "
                 "symboles. Abandon."
@@ -71,7 +56,7 @@ int main(int argn, const char** argv) {
         return 1;
     }
 
-    CodeGenVisitor v(symbolTableVisitor.getSymbolTable());
+    CodeGenVisitor v{symbolTable};
     v.visit(tree);
 
     return 0;

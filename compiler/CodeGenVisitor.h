@@ -1,11 +1,12 @@
 #pragma once
 
+#include "SymbolTable.h"
 #include "generated/ifccBaseVisitor.h"
 
 class CodeGenVisitor : public ifccBaseVisitor {
   public:
-    CodeGenVisitor(std::map<std::string, int>&& symbolTable) :
-        m_symbolTable(symbolTable), m_nextTemporaries(symbolTable.size() + 4) {}
+    CodeGenVisitor(SymbolTable& symbolTable) :
+        m_symbolTable(symbolTable), m_nextTemporaries(symbolTable.size() * 4 + 4) {}
 
     antlrcpp::Any visitProg(ifccParser::ProgContext* ctx) override;
     antlrcpp::Any visitReturn_stmt(ifccParser::Return_stmtContext* ctx) override;
@@ -32,6 +33,6 @@ class CodeGenVisitor : public ifccBaseVisitor {
         return temp;
     }
 
-    std::map<std::string, int> m_symbolTable;
+    SymbolTable& m_symbolTable;
     int m_nextTemporaries;
 };

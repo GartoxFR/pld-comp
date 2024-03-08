@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Instructions.h"
+#include "Terminators.h"
 
 namespace ir {
     namespace detail {
@@ -11,7 +12,7 @@ namespace ir {
           public:
             virtual void visit(T& t) {}
 
-            using TemplateVisitor<Ts>::visit...;
+            using TemplateVisitor<Ts...>::visit;
         };
 
         template <typename T>
@@ -22,7 +23,7 @@ namespace ir {
         };
     }
 
-    class Visitor : public detail::TemplateVisitor<BinaryOp, Copy> {};
+    class Visitor : public detail::TemplateVisitor<BinaryOp, Copy, Terminator> {};
 
     template <class T>
     struct decompose;

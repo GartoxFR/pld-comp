@@ -7,6 +7,7 @@
 #include <variant>
 
 namespace ir {
+    // Any linear Instruction in the IR (no jumps)
     class Instruction : public Visitable {
       public:
         virtual ~Instruction() = default;
@@ -19,13 +20,15 @@ namespace ir {
         }
     };
 
+    // Overload the << operator to print any Instruction
     template <typename InstrT>
-        requires std::derived_from<InstrT, Instruction>
-    inline std::ostream& operator<<(std::ostream& out, const Instruction& self) {
+        requires std::derived_from<InstrT, Instruction> or std::same_as<InstrT, Instruction>
+    inline std::ostream& operator<<(std::ostream& out, const InstrT& self) {
         self.print(out);
         return out;
     }
 
+    // A variable declared in the code with a name
     class Variable {
 
       public:
@@ -43,6 +46,7 @@ namespace ir {
         const std::string& ident;
     };
 
+    // A temporary expression created when linearizing expressions
     class Temporary {
       public:
         explicit Temporary(uint32_t id) : id(id) {}
@@ -59,6 +63,7 @@ namespace ir {
         uint32_t id;
     };
 
+    // An immediate value (constant like 5 or 42)
     class Immediate {
       public:
         explicit Immediate(uint32_t value) : value(value) {}
@@ -75,16 +80,21 @@ namespace ir {
         uint32_t value;
     };
 
+    // Anything that can be used as an operand
     using Operand = std::variant<Variable, Temporary, Immediate>;
+
+    // Anything that can be assigned to
     using Place = std::variant<Variable, Temporary>;
 
+    // Overload to be able to print Operands
     inline std::ostream& operator<<(std::ostream& out, const Operand& operand) {
         std::visit([&](auto& op) { out << op; }, operand);
         return out;
     }
 
-    inline std::ostream& operator<<(std::ostream& out, const Place& operand) {
-        std::visit([&](auto& op) { out << op; }, operand);
+    // Overload to be able to print Places
+    inline std::ostream& operator<<(std::ostream& out, const Place& place) {
+        std::visit([&](auto& op) { out << op; }, place);
         return out;
     }
 
@@ -105,6 +115,9 @@ namespace ir {
         return out;
     }
 
+    // Instruction of the form "destination := left operation right"
+    // instruction is a Place
+    // left and right are Operands
     class BinaryOp : public Instruction {
       public:
         BinaryOp(const Place& destination, const Operand& left, const Operand& right, BinaryOpKind operation) :
@@ -136,6 +149,7 @@ namespace ir {
         BinaryOpKind operation;
     };
 
+    // Instruction of the form "destination := source"
     class Copy : public Instruction {
       public:
         Copy(const Place& destination, const Operand& source) :
@@ -143,6 +157,14 @@ namespace ir {
 
         void print(std::ostream& out) const override {
             out << destination << " := " << source;
+        }
+
+        const Place& getDestination() const {
+            return destination;
+        }
+
+        const Operand& getSource() const {
+            return source;
         }
 
         void accept(Visitor& visitor) override;

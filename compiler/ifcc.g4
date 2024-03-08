@@ -16,7 +16,7 @@ expr: SUM_OP expr # unarySumOp
     | expr SUM_OP expr # sumOp
     | CONST # const
     | IDENT # var 
-    | '(' expr ')' #par
+    | '(' expr ')' # par
     ;
 
 return_stmt: RETURN expr ';' ;

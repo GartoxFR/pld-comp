@@ -1,0 +1,45 @@
+@startuml
+
+abstract class Visitable
+
+abstract class Instruction
+abstract class Terminator
+
+enum BinaryOpKind {
+    ADD
+    SUB
+    MUL
+    DIV
+}
+
+class BinaryOp {
+    --
+    Place destination
+    Operand left
+    Operand right
+}
+
+class Copy {
+    --
+    Place destination
+    Operand source
+}
+
+class BasicJump {
+    --
+    BasicBlock* target
+}
+
+
+Visitable <|-- Instruction
+Visitable <|-- Terminator
+
+Instruction <|-- BinaryOp
+Instruction <|-- Copy
+
+Terminator <|-- BasicJump
+
+BinaryOp --* BinaryOpKind
+
+
+@enduml

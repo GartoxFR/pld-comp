@@ -15,3 +15,6 @@ ifcc-test-output
 .vscode/
 .idea/
 
+# Images
+*.png
+*.svg
