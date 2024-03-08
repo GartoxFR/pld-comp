@@ -32,8 +32,6 @@
               inputsFrom = [ self.packages.${system}.default ];
               nativeBuildInputs = [pkgs.python3];
 
-              shellHook = "exec fish";
-
               ANTLR_PATH = pkgs.antlr.outPath;
               ANTLR_RUNTIME_PATH = pkgs.antlr.runtime.cpp.outPath;
               ANTLR_RUNTIME_DEV_PATH = pkgs.antlr.runtime.cpp.dev.outPath;
