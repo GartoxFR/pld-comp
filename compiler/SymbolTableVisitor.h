@@ -13,8 +13,14 @@ class SymbolTableVisitor : public ifccBaseVisitor {
         this->visit(axiom);
 
         for (auto& [ident, id] : globalSymbolTable) {
-            if (m_usedSymbols.find(ident) == m_usedSymbols.end()) {
+            bool read = m_readSymbols.contains(ident);
+            bool written = m_writtenSymbols.contains(ident);
+            if (!read && !written) {
                 std::cerr << "Warning: Variable " << ident << " déclarée mais non utilisée" << std::endl;
+            } else if (!read) {
+                std::cerr << "Warning: Variable " << ident << " écrite mais jamais lue" << std::endl;
+            } else if (!written) {
+                std::cerr << "Warning: Variable " << ident << " lue mais jamais initialisée" << std::endl;
             }
         }
 
@@ -22,6 +28,7 @@ class SymbolTableVisitor : public ifccBaseVisitor {
     }
 
   private:
-    std::set<Ident> m_usedSymbols;
+    std::unordered_set<Ident> m_readSymbols;
+    std::unordered_set<Ident> m_writtenSymbols;
     bool success = true;
 };

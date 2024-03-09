@@ -11,7 +11,7 @@ std::any SymbolTableVisitor::visitVar(ifccParser::VarContext* context) {
         return 0;
     }
 
-    m_usedSymbols.insert(ident);
+    m_readSymbols.insert(ident);
 
     return 0;
 }
@@ -27,8 +27,14 @@ std::any SymbolTableVisitor::visitDeclare_stmt(ifccParser::Declare_stmtContext* 
             return 0;
         }
 
-        globalSymbolTable.declare(std::move(ident));
+        globalSymbolTable.declare(ident);
+
+        // Variable is initialized inline so it's written at least once
+        if (initializer->expr()) {
+            m_writtenSymbols.insert(ident);
+        }
     }
+    visitChildren(context);
     return 0;
 }
 
@@ -42,6 +48,6 @@ std::any SymbolTableVisitor::visitAssign_stmt(ifccParser::Assign_stmtContext* ct
         return 0;
     }
 
-    m_usedSymbols.insert(std::move(ident));
+    m_writtenSymbols.insert(ident);
     return 0;
 }
