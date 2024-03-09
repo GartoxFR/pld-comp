@@ -27,7 +27,7 @@ antlrcpp::Any CodeGenVisitor::visitReturn_stmt(ifccParser::Return_stmtContext* c
 std::any CodeGenVisitor::visitConst(ifccParser::ConstContext* ctx) {
     int res = nextTemp();
     int val = std::stoi(ctx->CONST()->getText());
-    std::cout << "    movl $" << val << ", -" << res << "(%rsp)\n";
+    std::cout << "    movl $" << val << ", -" << res << "(%rbp)\n";
 
     return res;
 }
@@ -55,9 +55,9 @@ std::any CodeGenVisitor::visitAssign_stmt(ifccParser::Assign_stmtContext* ctx) {
     return 0;
 }
 
-void CodeGenVisitor::loadVariable(int temp) { std::cout << "    movl -" << temp << "(%rsp), %eax\n"; }
+void CodeGenVisitor::loadVariable(int temp) { std::cout << "    movl -" << temp << "(%rbp), %eax\n"; }
 
-void CodeGenVisitor::storeVariable(int temp) { std::cout << "    movl %eax, -" << temp << "(%rsp)\n"; }
+void CodeGenVisitor::storeVariable(int temp) { std::cout << "    movl %eax, -" << temp << "(%rbp)\n"; }
 
 std::any CodeGenVisitor::visitSumOp(ifccParser::SumOpContext* ctx) {
     int res = nextTemp();
@@ -72,7 +72,7 @@ std::any CodeGenVisitor::visitSumOp(ifccParser::SumOpContext* ctx) {
         std::cout << "    subl ";
     }
 
-    std::cout << "-" << right << "(%rsp), %eax\n";
+    std::cout << "-" << right << "(%rbp), %eax\n";
 
     storeVariable(res);
 
@@ -86,7 +86,7 @@ std::any CodeGenVisitor::visitProductOp(ifccParser::ProductOpContext* ctx) {
 
     loadVariable(left);
 
-    std::cout << "    imull -" << right << "(%rsp), %eax\n";
+    std::cout << "    imull -" << right << "(%rbp), %eax\n";
 
     storeVariable(res);
 
