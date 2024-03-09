@@ -41,9 +41,7 @@ class Ident {
     friend class SymbolTable;
     friend struct std::hash<Ident>;
 
-    friend inline std::ostream &operator<<(std::ostream& out, const Ident& symbol) {
-        return out << symbol.m_value;
-    }
+    friend inline std::ostream& operator<<(std::ostream& out, const Ident& symbol) { return out << symbol.m_value; }
 };
 
 // Define how to hash a Symbol. We can simply hash the pointers
@@ -61,18 +59,14 @@ class SymbolTable {
         return contains(ident);
     }
 
-    bool contains(const Ident& ident) const {
-        return m_symbolTable.find(ident) != m_symbolTable.end();
-    }
+    bool contains(const Ident& ident) const { return m_symbolTable.find(ident) != m_symbolTable.end(); }
 
     int operator[](const std::string& identStr) {
         Ident ident = toIdent(identStr);
         return operator[](ident);
     }
 
-    int operator[](const Ident& symbol) const {
-        return m_symbolTable.at(symbol);
-    }
+    int operator[](const Ident& symbol) const { return m_symbolTable.at(symbol); }
 
     void declare(std::string&& identStr) {
         Ident ident = toIdent(std::move(identStr));
@@ -116,7 +110,4 @@ class SymbolTable {
 
 inline SymbolTable globalSymbolTable;
 
-inline Ident make_ident(antlr4::tree::ParseTree* node) {
-    return globalSymbolTable.toIdent(node->getText());
-}
-
+inline Ident make_ident(antlr4::tree::ParseTree* node) { return globalSymbolTable.toIdent(node->getText()); }
