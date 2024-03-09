@@ -2,7 +2,7 @@
 #include <iostream>
 
 std::any SymbolTableVisitor::visitVar(ifccParser::VarContext* context) {
-    std::string ident = context->IDENT()->getText();
+    Ident ident = m_symbolTable.toIdent(context->IDENT()->getText());
 
     if (!m_symbolTable.contains(ident)) {
         std::cerr << "Erreur: Variable " << ident << " non déclarée" << std::endl;
@@ -11,7 +11,7 @@ std::any SymbolTableVisitor::visitVar(ifccParser::VarContext* context) {
         return 0;
     }
 
-    m_usedSymbols.insert(std::move(ident));
+    m_usedSymbols.insert(ident);
 
     return 0;
 }
@@ -33,7 +33,7 @@ std::any SymbolTableVisitor::visitDeclare_stmt(ifccParser::Declare_stmtContext* 
 }
 
 std::any SymbolTableVisitor::visitAssign_stmt(ifccParser::Assign_stmtContext* ctx) {
-    std::string ident = ctx->IDENT()->getText();
+    Ident ident = m_symbolTable.toIdent(ctx->IDENT()->getText());
 
     if (!m_symbolTable.contains(ident)) {
         std::cerr << "Erreur: Variable " << ident << " non déclarée" << std::endl;

@@ -2,7 +2,6 @@
 
 #include "SymbolTable.h"
 #include "generated/ifccBaseVisitor.h"
-#include <string>
 
 class SymbolTableVisitor : public ifccBaseVisitor {
   public:
@@ -26,6 +25,6 @@ class SymbolTableVisitor : public ifccBaseVisitor {
 
   private:
     SymbolTable& m_symbolTable;
-    std::set<std::string> m_usedSymbols;
+    std::set<Ident> m_usedSymbols;
     bool success = true;
 };

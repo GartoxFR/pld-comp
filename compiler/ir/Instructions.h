@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../SymbolTable.h"
 #include "Visitable.h"
 #include <cstdint>
 #include <ostream>
@@ -32,16 +33,16 @@ namespace ir {
     class Variable {
 
       public:
-        explicit Variable(const std::string& ident) : ident(ident) {}
+        explicit Variable(Ident& ident) : ident(ident) {}
 
-        const std::string& getIdent() const { return ident; }
+        const Ident& getIdent() const { return ident; }
 
         friend inline std::ostream& operator<<(std::ostream& out, const Variable& self) {
             return out << self.getIdent();
         }
 
       private:
-        const std::string& ident;
+        Ident ident;
     };
 
     // A temporary expression created when linearizing expressions
