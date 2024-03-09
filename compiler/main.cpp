@@ -46,8 +46,7 @@ int main(int argn, const char** argv) {
         exit(1);
     }
 
-    SymbolTable symbolTable;
-    SymbolTableVisitor symbolTableVisitor{symbolTable};
+    SymbolTableVisitor symbolTableVisitor;
 
     if (!symbolTableVisitor.createSymbolTable(tree)) {
         cerr << "Des erreurs sont survenus lors de la création de la table des "
@@ -56,7 +55,7 @@ int main(int argn, const char** argv) {
         return 1;
     }
 
-    CodeGenVisitor v{symbolTable};
+    CodeGenVisitor v;
     v.visit(tree);
 
     return 0;

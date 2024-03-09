@@ -5,7 +5,7 @@ antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext* ctx) {
     std::cout << " main: \n";
     std::cout << "    pushq %rbp\n";
     std::cout << "    movq %rsp, %rbp\n";
-    std::cout << "    subq  $" << m_symbolTable.size() * 4 << ", %rsp\n";
+    std::cout << "    subq  $" << globalSymbolTable.size() * 4 << ", %rsp\n";
 
     for (auto stmt : ctx->stmt())
         this->visit(stmt);
@@ -32,7 +32,7 @@ std::any CodeGenVisitor::visitConst(ifccParser::ConstContext* ctx) {
     return res;
 }
 
-std::any CodeGenVisitor::visitVar(ifccParser::VarContext* ctx) { return m_symbolTable[ctx->IDENT()->getText()]; }
+std::any CodeGenVisitor::visitVar(ifccParser::VarContext* ctx) { return globalSymbolTable[ctx->IDENT()->getText()]; }
 
 std::any CodeGenVisitor::visitInitializer(ifccParser::InitializerContext* ctx) {
     // No initializer -> nothing to do
@@ -40,10 +40,11 @@ std::any CodeGenVisitor::visitInitializer(ifccParser::InitializerContext* ctx) {
         return 0;
     }
 
-    auto ident = ctx->IDENT()->getText();
+    auto ident = make_ident(ctx->IDENT());
+
     int res = std::any_cast<int>(visit(ctx->expr()));
     loadVariable(res);
-    storeVariable(m_symbolTable[ident]);
+    storeVariable(globalSymbolTable[ident]);
 
     return 0;
 }
@@ -51,7 +52,7 @@ std::any CodeGenVisitor::visitInitializer(ifccParser::InitializerContext* ctx) {
 std::any CodeGenVisitor::visitAssign_stmt(ifccParser::Assign_stmtContext* ctx) {
     int temp = std::any_cast<int>(visit(ctx->expr()));
     loadVariable(temp);
-    storeVariable(m_symbolTable[ctx->IDENT()->getText()]);
+    storeVariable(globalSymbolTable[ctx->IDENT()->getText()]);
     return 0;
 }
 

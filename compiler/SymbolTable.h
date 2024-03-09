@@ -114,3 +114,9 @@ class SymbolTable {
     int nextIndex = 4;
 };
 
+inline SymbolTable globalSymbolTable;
+
+inline Ident make_ident(antlr4::tree::ParseTree* node) {
+    return globalSymbolTable.toIdent(node->getText());
+}
+

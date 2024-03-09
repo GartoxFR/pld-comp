@@ -5,7 +5,7 @@
 include config.mk
 
 CC=g++
-CCFLAGS=-g -c -std=c++20 -I$(ANTLRINC) -Wno-attributes # -Wno-defaulted-function-deleted -Wno-unknown-warning-option -fsanitize=address
+CCFLAGS=-g -c -std=c++20 -I$(ANTLRINC) -Wall -Wpedantic -Wno-overloaded-virtual -Wno-attributes -Wno-defaulted-function-deleted -Wno-unknown-warning-option -fsanitize=address
 LDFLAGS=-g -fsanitize=address
 
 default: all

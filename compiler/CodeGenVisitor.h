@@ -5,8 +5,8 @@
 
 class CodeGenVisitor : public ifccBaseVisitor {
   public:
-    CodeGenVisitor(SymbolTable& symbolTable) :
-        m_symbolTable(symbolTable), m_nextTemporaries(symbolTable.size() * 4 + 4) {}
+    CodeGenVisitor() :
+        m_nextTemporaries(globalSymbolTable.size() * 4 + 4) {}
 
     antlrcpp::Any visitProg(ifccParser::ProgContext* ctx) override;
     antlrcpp::Any visitReturn_stmt(ifccParser::Return_stmtContext* ctx) override;
@@ -32,6 +32,5 @@ class CodeGenVisitor : public ifccBaseVisitor {
         return temp;
     }
 
-    SymbolTable& m_symbolTable;
     int m_nextTemporaries;
 };

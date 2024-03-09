@@ -2,9 +2,9 @@
 #include <iostream>
 
 std::any SymbolTableVisitor::visitVar(ifccParser::VarContext* context) {
-    Ident ident = m_symbolTable.toIdent(context->IDENT()->getText());
+    Ident ident = make_ident(context->IDENT());
 
-    if (!m_symbolTable.contains(ident)) {
+    if (!globalSymbolTable.contains(ident)) {
         std::cerr << "Erreur: Variable " << ident << " non déclarée" << std::endl;
 
         success = false;
@@ -18,24 +18,24 @@ std::any SymbolTableVisitor::visitVar(ifccParser::VarContext* context) {
 
 std::any SymbolTableVisitor::visitDeclare_stmt(ifccParser::Declare_stmtContext* context) {
     for (auto initializer : context->idents) {
-        std::string ident = initializer->IDENT()->getText();
+        Ident ident = make_ident(initializer->IDENT());
 
-        if (m_symbolTable.contains(ident)) {
+        if (globalSymbolTable.contains(ident)) {
             std::cerr << "Erreur: Variable " << ident << " déjà déclarée" << std::endl;
 
             success = false;
             return 0;
         }
 
-        m_symbolTable.declare(std::move(ident));
+        globalSymbolTable.declare(std::move(ident));
     }
     return 0;
 }
 
 std::any SymbolTableVisitor::visitAssign_stmt(ifccParser::Assign_stmtContext* ctx) {
-    Ident ident = m_symbolTable.toIdent(ctx->IDENT()->getText());
+    Ident ident = make_ident(ctx->IDENT());
 
-    if (!m_symbolTable.contains(ident)) {
+    if (!globalSymbolTable.contains(ident)) {
         std::cerr << "Erreur: Variable " << ident << " non déclarée" << std::endl;
 
         success = false;
