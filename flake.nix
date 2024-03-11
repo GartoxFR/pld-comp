@@ -16,14 +16,15 @@
           pkgs = import nixpkgs {
             inherit system;
           };
+          antlr = pkgs.antlr;
         in
         rec {
           packages = {
               default = pkgs.gcc13Stdenv.mkDerivation {
               name = "ifcc";
               src = self;
-              nativeBuildInputs = [ pkgs.cmake pkgs.jdk21 pkgs.antlr ];
-              buildInputs = [ pkgs.antlr.runtime.cpp ];
+              nativeBuildInputs = [ pkgs.cmake pkgs.jdk21 antlr ];
+              buildInputs = [ antlr.runtime.cpp ];
             };
           };
           devShells.default = pkgs.mkShell.override {
@@ -32,9 +33,9 @@
               inputsFrom = [ self.packages.${system}.default ];
               nativeBuildInputs = [pkgs.python3];
 
-              ANTLR_PATH = pkgs.antlr.outPath;
-              ANTLR_RUNTIME_PATH = pkgs.antlr.runtime.cpp.outPath;
-              ANTLR_RUNTIME_DEV_PATH = pkgs.antlr.runtime.cpp.dev.outPath;
+              ANTLR_PATH = antlr.outPath;
+              ANTLR_RUNTIME_PATH = antlr.runtime.cpp.outPath;
+              ANTLR_RUNTIME_DEV_PATH = antlr.runtime.cpp.dev.outPath;
           };
         }
       );

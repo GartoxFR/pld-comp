@@ -24,7 +24,7 @@ make test -j    # Build the project and execute the tests
 using namespace ir;
 
 // Construct some strings to represent variable names
-std::string foo("foo"), bar("bar");
+Ident foo = make_ident("foo"), bar = make_ident("bar");
 
 // Declare the block, usually they will be given to us
 // by the ControlFlowGraph but this is fine for an example

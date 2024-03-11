@@ -87,13 +87,15 @@ class SymbolTable {
     Ident toIdent(const std::string& symbol) {
         // Inserting into a set returns the iterator to the inserted element. If the set already contains
         // the element, it just returns the contained element
-        return Ident(*m_identPool.insert(symbol).first);
+        const std::string& str = *m_identPool.insert(symbol).first;
+        return Ident(std::string_view{str});
     }
 
     Ident toIdent(std::string&& symbol) {
         // Inserting into a set returns the iterator to the inserted element. If the set already contains
         // the element, it just returns the contained element
-        return Ident(*m_identPool.insert(std::move(symbol)).first);
+        const std::string& str = *m_identPool.insert(std::move(symbol)).first;
+        return Ident(std::string_view{str});
     }
 
     auto begin() { return m_symbolTable.begin(); }
@@ -110,4 +112,9 @@ class SymbolTable {
 
 inline SymbolTable globalSymbolTable;
 
+// Get an Ident from the text of a ParseTree node
 inline Ident make_ident(antlr4::tree::ParseTree* node) { return globalSymbolTable.toIdent(node->getText()); }
+
+inline Ident make_ident(const std::string& str) { return globalSymbolTable.toIdent(str); }
+
+inline Ident make_ident(std::string&& str) { return globalSymbolTable.toIdent(std::move(str)); }

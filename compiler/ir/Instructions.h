@@ -33,7 +33,7 @@ namespace ir {
     class Variable {
 
       public:
-        explicit Variable(Ident& ident) : ident(ident) {}
+        explicit Variable(const Ident& ident) : ident(ident) {}
 
         const Ident& getIdent() const { return ident; }
 
