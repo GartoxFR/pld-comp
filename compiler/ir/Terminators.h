@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Visitable.h"
-#include "ControlFlowGraph.h"
+#include "Function.h"
 #include <ostream>
 
 namespace ir {
@@ -29,13 +29,15 @@ namespace ir {
 
     class BasicJump : public Terminator {
       public:
-        explicit BasicJump(BasicBlock* target) : target(target) {}
+        explicit BasicJump(BasicBlock* target) : m_target(target) {}
 
         void accept(Visitor& visitor) override;
 
-        void print(std::ostream& out) const override { out << "jump " << target->label(); }
+        void print(std::ostream& out) const override { out << "jump " << m_target->label(); }
+
+        BasicBlock* target() { return m_target; }
 
       private:
-        BasicBlock* target;
+        BasicBlock* m_target;
     };
 }

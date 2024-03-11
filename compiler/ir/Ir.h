@@ -2,6 +2,6 @@
 
 #include "Visitor.h"
 #include "Visitable.h"
-#include "ControlFlowGraph.h"
+#include "Function.h"
 #include "Instructions.h"
 #include "Terminators.h"

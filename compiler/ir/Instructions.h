@@ -6,6 +6,7 @@
 #include <ostream>
 #include <string>
 #include <variant>
+#include <unordered_map>
 
 namespace ir {
     // Any linear Instruction in the IR (no jumps)
@@ -29,67 +30,38 @@ namespace ir {
         return out;
     }
 
-    // A variable declared in the code with a name
-    class Variable {
-
+    // A local variable being a temporary or named variable
+    class Local {
       public:
-        explicit Variable(const Ident& ident) : ident(ident) {}
+        explicit Local(uint32_t id) : m_id(id) {}
 
-        const Ident& getIdent() const { return ident; }
+        uint32_t id() const { return m_id; }
 
-        friend inline std::ostream& operator<<(std::ostream& out, const Variable& self) {
-            return out << self.getIdent();
-        }
+        friend inline std::ostream& operator<<(std::ostream& out, const Local& self) { return out << "_" << self.id(); }
 
       private:
-        Ident ident;
-    };
-
-    // A temporary expression created when linearizing expressions
-    class Temporary {
-      public:
-        explicit Temporary(uint32_t id) : id(id) {}
-
-        uint32_t getId() const { return id; }
-
-        friend inline std::ostream& operator<<(std::ostream& out, const Temporary& self) {
-            return out << "t" << self.getId();
-        }
-
-      private:
-        uint32_t id;
+        uint32_t m_id;
     };
 
     // An immediate value (constant like 5 or 42)
     class Immediate {
       public:
-        explicit Immediate(uint32_t value) : value(value) {}
+        explicit Immediate(uint32_t value) : m_value(value) {}
 
-        uint32_t getValue() const { return value; }
+        uint32_t value() const { return m_value; }
 
-        friend inline std::ostream& operator<<(std::ostream& out, const Immediate& self) {
-            return out << self.getValue();
-        }
+        friend inline std::ostream& operator<<(std::ostream& out, const Immediate& self) { return out << self.value(); }
 
       private:
-        uint32_t value;
+        uint32_t m_value;
     };
 
     // Anything that can be used as an operand
-    using Operand = std::variant<Variable, Temporary, Immediate>;
+    using RValue = std::variant<Local, Immediate>;
 
-    // Anything that can be assigned to
-    using Place = std::variant<Variable, Temporary>;
-
-    // Overload to be able to print Operands
-    inline std::ostream& operator<<(std::ostream& out, const Operand& operand) {
-        std::visit([&](auto& op) { out << op; }, operand);
-        return out;
-    }
-
-    // Overload to be able to print Places
-    inline std::ostream& operator<<(std::ostream& out, const Place& place) {
-        std::visit([&](auto& op) { out << op; }, place);
+    // Overload to be able to print RValues
+    inline std::ostream& operator<<(std::ostream& out, const RValue& rvalue) {
+        std::visit([&](auto& op) { out << op; }, rvalue);
         return out;
     }
 
@@ -111,47 +83,52 @@ namespace ir {
     }
 
     // Instruction of the form "destination := left operation right"
-    // instruction is a Place
-    // left and right are Operands
+    // instruction is a Local
+    // left and right are RValues
     class BinaryOp : public Instruction {
       public:
-        BinaryOp(const Place& destination, const Operand& left, const Operand& right, BinaryOpKind operation) :
-            Instruction(), destination(destination), left(left), right(right), operation(operation) {}
+        BinaryOp(const Local& destination, const RValue& left, const RValue& right, BinaryOpKind operation) :
+            Instruction(), m_destination(destination), m_left(left), m_right(right), m_operation(operation) {}
 
         void print(std::ostream& out) const override {
-            out << destination << " := " << left << " " << operation << " " << right;
+            out << m_destination << " := " << m_left << " " << m_operation << " " << m_right;
         }
 
         void accept(Visitor& visitor) override;
 
-        const Place& getDestination() const { return destination; }
-        const Operand& getLeft() const { return left; }
-        const Operand& getRight() const { return right; }
-        BinaryOpKind getOperation() const { return operation; }
+        const Local& destination() const { return m_destination; }
+        const RValue& left() const { return m_left; }
+        const RValue& right() const { return m_right; }
+        BinaryOpKind operation() const { return m_operation; }
 
       private:
-        Place destination;
-        Operand left;
-        Operand right;
-        BinaryOpKind operation;
+        Local m_destination;
+        RValue m_left;
+        RValue m_right;
+        BinaryOpKind m_operation;
     };
 
     // Instruction of the form "destination := source"
     class Copy : public Instruction {
       public:
-        Copy(const Place& destination, const Operand& source) :
-            Instruction(), destination(destination), source(source) {}
+        Copy(const Local& destination, const RValue& source) :
+            Instruction(), m_destination(destination), m_source(source) {}
 
-        void print(std::ostream& out) const override { out << destination << " := " << source; }
+        void print(std::ostream& out) const override { out << m_destination << " := " << m_source; }
 
-        const Place& getDestination() const { return destination; }
+        const Local& destination() const { return m_destination; }
 
-        const Operand& getSource() const { return source; }
+        const RValue& source() const { return m_source; }
 
         void accept(Visitor& visitor) override;
 
       private:
-        Place destination;
-        Operand source;
+        Local m_destination;
+        RValue m_source;
     };
 }
+
+template <>
+struct std::hash<ir::Local> {
+    size_t operator()(const ir::Local& local) const { return std::hash<uint32_t>{}(local.id()); }
+};

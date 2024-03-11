@@ -14,7 +14,8 @@ namespace ir {
     // The Terminator is null if the block is the epilogue or if it's still in construction
     class BasicBlock {
       public:
-        BasicBlock(uint32_t id) : m_label(std::format("BB{}", id)) {}
+        BasicBlock(const Ident& functionName, uint32_t id) :
+            m_label(std::format(".{}.BB{}", std::string_view(functionName), id)) {}
 
         // Append an instruction of type InstructionT to the block and return a pointer to it.
         // Example : emit<Copy>(destination, source) to add a Copy instruction
@@ -72,14 +73,5 @@ namespace ir {
 
         // Unique label of the block
         std::string m_label;
-    };
-
-    class ControlFlowGraph {
-      public:
-        BasicBlock* allocateBlock;
-
-      private:
-        // Allocated on the heap to not invalidate pointers to BasicBlocks when resizing the vector
-        std::vector<std::unique_ptr<BasicBlock>> m_blocks;
     };
 }

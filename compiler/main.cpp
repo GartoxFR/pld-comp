@@ -10,6 +10,7 @@
 #include "generated/ifccLexer.h"
 #include "generated/ifccParser.h"
 #include "generated/ifccBaseVisitor.h"
+#include "ir/Ir.h"
 
 #include "CodeGenVisitor.h"
 
@@ -17,7 +18,6 @@ using namespace antlr4;
 using namespace std;
 
 int main(int argn, const char** argv) {
-
     stringstream in;
     if (argn == 2) {
         ifstream lecture(argv[1]);
