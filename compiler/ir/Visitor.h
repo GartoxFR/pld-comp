@@ -6,6 +6,7 @@
 namespace ir {
     class Visitor {
       public:
+        virtual ~Visitor() = default;
         // Instructions
         virtual void visit(BinaryOp&) = 0;
         virtual void visit(UnaryOp&) = 0;
