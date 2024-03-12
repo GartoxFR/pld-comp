@@ -109,9 +109,9 @@ namespace ir {
     };
 
     // Instruction of the form "destination := source"
-    class Copy : public Instruction {
+    class Assignment : public Instruction {
       public:
-        Copy(const Local& destination, const RValue& source) :
+        Assignment(const Local& destination, const RValue& source) :
             Instruction(), m_destination(destination), m_source(source) {}
 
         void print(std::ostream& out) const override { out << m_destination << " := " << m_source; }

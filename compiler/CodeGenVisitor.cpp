@@ -19,6 +19,7 @@ antlrcpp::Any CodeGenVisitor::visitProg(ifccParser::ProgContext* ctx) {
 }
 
 antlrcpp::Any CodeGenVisitor::visitReturn_stmt(ifccParser::Return_stmtContext* ctx) {
+    int x = 0;
     int retVar = std::any_cast<int>(visit(ctx->expr()));
     loadVariable(retVar);
     return 0;
