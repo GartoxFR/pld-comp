@@ -20,6 +20,7 @@ OBJECTS=build/ifccBaseVisitor.o \
 	build/main.o \
 	build/CodeGenVisitor.o \
 	build/SymbolTableVisitor.o \
+	build/IrGenVisitor.o \
 	build/ir/Instructions.o \
 	build/ir/Terminators.o
 

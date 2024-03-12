@@ -48,12 +48,12 @@ namespace ir {
       public:
         explicit Immediate(uint32_t value) : m_value(value) {}
 
-        uint32_t value() const { return m_value; }
+        int32_t value() const { return m_value; }
 
         friend inline std::ostream& operator<<(std::ostream& out, const Immediate& self) { return out << self.value(); }
 
       private:
-        uint32_t m_value;
+        int32_t m_value;
     };
 
     // Anything that can be used as an operand

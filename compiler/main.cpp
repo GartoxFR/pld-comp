@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <variant>
 
+#include "IrGenVisitor.h"
 #include "SymbolTableVisitor.h"
 #include "antlr4-runtime.h"
 #include "generated/ifccLexer.h"
@@ -19,7 +20,7 @@ using namespace std;
 
 int main(int argn, const char** argv) {
     stringstream in;
-    if (argn == 2) {
+    if (argn >= 2) {
         ifstream lecture(argv[1]);
         if (!lecture.good()) {
             cerr << "error: cannot read file: " << argv[1] << endl;
@@ -44,6 +45,27 @@ int main(int argn, const char** argv) {
     if (parser.getNumberOfSyntaxErrors() != 0) {
         cerr << "error: syntax error during parsing" << endl;
         exit(1);
+    }
+
+    // Just print ir
+    if (argn >= 3 && strcmp(argv[2], "-ir") == 0) {
+        IrGenVisitor visitor;
+        visitor.visit(tree);
+
+        for (const auto& function : visitor.functions()) {
+            function->printLocalMapping(cout);
+            for (const auto& block : function->blocks()) {
+                cout << block->label() << endl;
+                for (const auto& instr : block->instructions()) {
+                    cout << "    " << *instr << endl;
+                }
+
+                if (block->terminator()) {
+                    cout << "    " << *block->terminator() << endl;
+                }
+            }
+        }
+        return 0;
     }
 
     SymbolTableVisitor symbolTableVisitor;

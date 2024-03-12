@@ -1,7 +1,6 @@
 #pragma once
 
 #include "BasicBlock.h"
-#include "../SymbolTable.h"
 
 namespace ir {
 
@@ -11,13 +10,13 @@ namespace ir {
         LocalInfo() = default;
         explicit LocalInfo(Ident m_name) : m_name(m_name) {}
 
-        const std::optional<Ident>& name() const { return m_name; }
+        const std::optional<std::string>& name() const { return m_name; }
 
         bool isTemporary() const { return !m_name.has_value(); }
 
       private:
         // Name for user defined variables, null for temporaries
-        std::optional<Ident> m_name;
+        std::optional<std::string> m_name;
     };
 
     // Represents a function in a form of a ControlFlowGraph
@@ -48,15 +47,19 @@ namespace ir {
             return Local{id};
         }
 
+        Local returnLocal() const { return Local{0}; }
+
         const auto& name() const { return m_name; }
 
         size_t argCount() const { return m_argCount; }
+
+        const auto& blocks() const { return m_blocks; }
 
         void printLocalMapping(std::ostream& out) const {
             out << "debug {" << std::endl;
             for (size_t i = 0; i < m_locals.size(); i++) {
                 if (!m_locals[i].isTemporary())
-                    out << std::format("    _{} => {}", i, std::string_view(m_locals[i].name().value())) << std::endl;
+                    out << std::format("    _{} => {}", i, m_locals[i].name().value()) << std::endl;
             }
             out << "}" << std::endl;
         }

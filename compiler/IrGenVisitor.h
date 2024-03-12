@@ -1,0 +1,34 @@
+#pragma once
+
+#include "generated/ifccBaseVisitor.h"
+#include "ir/Function.h"
+#include "ir/Ir.h"
+#include <vector>
+
+class IrGenVisitor : public ifccBaseVisitor {
+  public:
+    std::any visitProg(ifccParser::ProgContext* ctx) override;
+    std::any visitReturn_stmt(ifccParser::Return_stmtContext* ctx) override;
+
+    std::any visitConst(ifccParser::ConstContext* ctx) override;
+    std::any visitVar(ifccParser::VarContext* ctx) override;
+
+    std::any visitInitializer(ifccParser::InitializerContext* ctx) override;
+    std::any visitAssign_stmt(ifccParser::Assign_stmtContext* ctx) override;
+
+    std::any visitSumOp(ifccParser::SumOpContext* ctx) override;
+    std::any visitProductOp(ifccParser::ProductOpContext* ctx) override;
+    std::any visitUnarySumOp(ifccParser::UnarySumOpContext* ctx) override;
+
+    std::any visitPar(ifccParser::ParContext* ctx) override { return visit(ctx->expr()); }
+
+    std::any visitBinaryOp(ifccParser::ExprContext* left, ifccParser::ExprContext* right, ir::BinaryOpKind op);
+
+    const auto& functions() const { return m_functions; }
+
+  private:
+    std::vector<std::unique_ptr<ir::Function>> m_functions;
+    ir::Function* m_currentFunction;
+    ir::BasicBlock* m_currentBlock;
+    std::unordered_map<Ident, ir::Local> m_localTable;
+};

@@ -23,7 +23,7 @@ namespace ir {
         };
     }
 
-    class Visitor : public detail::TemplateVisitor<BinaryOp, Assignment, Terminator> {};
+    class Visitor : public detail::TemplateVisitor<BinaryOp, Assignment, BasicJump> {};
 
     template <class T>
     struct decompose;
