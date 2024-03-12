@@ -108,6 +108,39 @@ namespace ir {
         BinaryOpKind m_operation;
     };
 
+    enum class UnaryOpKind {
+        MINUS,
+    };
+
+    inline std::ostream& operator<<(std::ostream& out, const UnaryOpKind& op) {
+        switch (op) {
+            case UnaryOpKind::MINUS: return out << "-";
+        }
+        return out;
+    }
+
+    // Instruction of the form "destination := op operand " like "a := -b"
+    class UnaryOp : public Instruction {
+      public:
+        UnaryOp(const Local& destination, const RValue& operand, UnaryOpKind operation) :
+            Instruction(), m_destination(destination), m_operand(operand), m_operation(operation) {}
+
+        void print(std::ostream& out) const override {
+            out << m_destination << " := " << m_operation << m_operand;
+        }
+
+        void accept(Visitor& visitor) override;
+
+        const Local& destination() const { return m_destination; }
+        const RValue& left() const { return m_operand; }
+        UnaryOpKind operation() const { return m_operation; }
+
+      private:
+        Local m_destination;
+        RValue m_operand;
+        UnaryOpKind m_operation;
+    };
+
     // Instruction of the form "destination := source"
     class Assignment : public Instruction {
       public:

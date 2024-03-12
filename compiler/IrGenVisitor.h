@@ -24,6 +24,7 @@ class IrGenVisitor : public ifccBaseVisitor {
     std::any visitPar(ifccParser::ParContext* ctx) override { return visit(ctx->expr()); }
 
     std::any visitBinaryOp(ifccParser::ExprContext* left, ifccParser::ExprContext* right, ir::BinaryOpKind op);
+    std::any visitUnaryOp(ifccParser::ExprContext* operand, ir::UnaryOpKind op);
 
     const auto& functions() const { return m_functions; }
 

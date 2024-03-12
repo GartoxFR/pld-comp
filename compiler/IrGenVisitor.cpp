@@ -101,7 +101,18 @@ IrGenVisitor::visitBinaryOp(ifccParser::ExprContext* left, ifccParser::ExprConte
     return res;
 }
 
+std::any IrGenVisitor::visitUnaryOp(ifccParser::ExprContext* operand, ir::UnaryOpKind op) {
+    Local res = m_currentFunction->newLocal();
+    Local operandRes = std::any_cast<Local>(visit(operand));
+    m_currentBlock->emit<UnaryOp>(res, operandRes, op);
+    return res;
+}
+
 std::any IrGenVisitor::visitUnarySumOp(ifccParser::UnarySumOpContext* ctx) {
-    // TODO: UnaryOP
-    return 0;
+    if (ctx->SUM_OP()->getText() == "-") {
+        return visitUnaryOp(ctx->expr(), UnaryOpKind::MINUS);
+    } else {
+        // Nothing to do for unary "+"
+        return visit(ctx->expr());
+    }
 }
