@@ -2,6 +2,7 @@
 
 #include "Visitable.h"
 #include "Function.h"
+#include "Instructions.h"
 #include <ostream>
 
 namespace ir {
@@ -39,5 +40,29 @@ namespace ir {
 
       private:
         BasicBlock* m_target;
+    };
+
+    class ConditionalJump : public Terminator {
+      public:
+        ConditionalJump(const RValue& condition, BasicBlock* m_trueTarget, BasicBlock* m_falseTarget) :
+            m_condition(condition), m_trueTarget(m_trueTarget), m_falseTarget(m_falseTarget) {}
+
+        void accept(Visitor& visitor) override;
+
+        void print(std::ostream& out) const override {
+            out << "cond_jump " << m_condition << " [true -> " << m_trueTarget->label() << ", false -> "
+                << m_falseTarget->label() << "]";
+        }
+
+        BasicBlock* trueTarget() { return m_trueTarget; }
+
+        BasicBlock* falseTarget() { return m_falseTarget; }
+
+        const RValue& condition() const { return m_condition; }
+
+      private:
+        RValue m_condition;
+        BasicBlock* m_trueTarget;
+        BasicBlock* m_falseTarget;
     };
 }

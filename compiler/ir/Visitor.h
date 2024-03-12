@@ -4,26 +4,17 @@
 #include "Terminators.h"
 
 namespace ir {
-    namespace detail {
+    class Visitor {
+      public:
+        // Instructions
+        virtual void visit(BinaryOp&) = 0;
+        virtual void visit(UnaryOp&) = 0;
+        virtual void visit(Assignment&) = 0;
 
-        template <typename T, typename... Ts>
-            requires std::derived_from<T, Visitable> && (... && std::derived_from<Ts, Visitable>)
-        class TemplateVisitor : TemplateVisitor<Ts...> {
-          public:
-            virtual void visit(T& t) {}
-
-            using TemplateVisitor<Ts...>::visit;
-        };
-
-        template <typename T>
-            requires std::derived_from<T, Visitable>
-        class TemplateVisitor<T> {
-          public:
-            virtual void visit(T& t) {}
-        };
-    }
-
-    class Visitor : public detail::TemplateVisitor<BinaryOp, UnaryOp, Assignment, BasicJump> {};
+        //  Terminators
+        virtual void visit(BasicJump&) = 0;
+        virtual void visit(ConditionalJump&) = 0;
+    };
 
     template <class T>
     struct decompose;
