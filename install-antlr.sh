@@ -37,8 +37,8 @@ mkdir antlr.tmp
 cd antlr.tmp
 
 #download both the tool jar and the cpp runtime
-curl -O https://www.antlr.org/download/antlr-4.9.2-complete.jar
-curl -O https://www.antlr.org/download/antlr4-cpp-runtime-4.9.2-source.zip
+curl -O https://www.antlr.org/download/antlr-4.13.1-complete.jar
+curl -O https://www.antlr.org/download/antlr4-cpp-runtime-4.13.1-source.zip
 
 ######################################################################
 # Build step
