@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Instructions.h"
-#include <concepts>
-#include <format>
 #include <memory>
 #include <vector>
 
@@ -14,8 +12,11 @@ namespace ir {
     // The Terminator is null if the block is the epilogue or if it's still in construction
     class BasicBlock {
       public:
-        BasicBlock(const std::string& functionName, uint32_t id) :
-            m_label(std::format(".{}.BB{}", functionName, id)) {}
+        BasicBlock(const std::string& functionName, uint32_t id) {
+            std::stringstream labelStream;
+            labelStream << "." << functionName << ".BB" << id; 
+            m_label = labelStream.str();
+        }
 
         // Append an instruction of type InstructionT to the block and return a pointer to it.
         // Example : emit<Copy>(destination, source) to add a Copy instruction
@@ -61,10 +62,8 @@ namespace ir {
         const auto& terminator() const { return m_terminator; }
 
         friend inline std::ostream& operator<<(std::ostream& out, const BasicBlock& self) {
-            return out << std::format(
-                       "BasicBlock(label = {}, instructionCount = {}, terminated = {})", self.label(),
-                       self.instructions().size(), bool(self.terminator())
-                   );
+            return out << "BasicBlock(label = " << self.label() << "instructionCount = " << self.instructions().size()
+                       << "terminated = " << bool(self.terminator()) << ")";
         }
 
       private:

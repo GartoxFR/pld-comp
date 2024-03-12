@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BasicBlock.h"
+#include <optional>
 
 namespace ir {
 
@@ -59,7 +60,7 @@ namespace ir {
             out << "debug {" << std::endl;
             for (size_t i = 0; i < m_locals.size(); i++) {
                 if (!m_locals[i].isTemporary())
-                    out << std::format("    _{} => {}", i, m_locals[i].name().value()) << std::endl;
+                    out << "    _"  << i << " => " << m_locals[i].name().value() << std::endl;
             }
             out << "}" << std::endl;
         }

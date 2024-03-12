@@ -20,7 +20,7 @@
         in
         rec {
           packages = {
-              default = pkgs.gcc13Stdenv.mkDerivation {
+              default = pkgs.gcc11Stdenv.mkDerivation {
               name = "ifcc";
               src = self;
               nativeBuildInputs = [ pkgs.cmake pkgs.jdk21 antlr ];
@@ -28,7 +28,7 @@
             };
           };
           devShells.default = pkgs.mkShell.override {
-              stdenv = (pkgs.callPackage mini-compile-commands {}).wrap pkgs.gcc13Stdenv;
+              stdenv = (pkgs.callPackage mini-compile-commands {}).wrap pkgs.gcc11Stdenv;
           } {
               inputsFrom = [ self.packages.${system}.default ];
               nativeBuildInputs = [pkgs.python3];
