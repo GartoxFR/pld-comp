@@ -1,5 +1,6 @@
 #pragma once
 
+#include "IrSymbolTable.h"
 #include "generated/ifccBaseVisitor.h"
 #include "ir/Function.h"
 #include "ir/Ir.h"
@@ -26,9 +27,11 @@ class IrGenVisitor : public ifccBaseVisitor {
 
     const auto& functions() const { return m_functions; }
 
+    bool hasErrors() const { return m_symbolTable.hasErrors(); }
+
   private:
     std::vector<std::unique_ptr<ir::Function>> m_functions;
     ir::Function* m_currentFunction;
     ir::BasicBlock* m_currentBlock;
-    std::unordered_map<Ident, ir::Local> m_localTable;
+    IrSymbolTable m_symbolTable;
 };

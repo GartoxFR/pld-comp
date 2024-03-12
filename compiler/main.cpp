@@ -52,6 +52,12 @@ int main(int argn, const char** argv) {
         IrGenVisitor visitor;
         visitor.visit(tree);
 
+        if (visitor.hasErrors()) {
+
+            cerr << "Des erreurs sont survenus. Abandon." << endl;
+            return 1;
+        }
+
         for (const auto& function : visitor.functions()) {
             function->printLocalMapping(cout);
             for (const auto& block : function->blocks()) {

@@ -8,7 +8,7 @@ namespace ir {
     class LocalInfo {
       public:
         LocalInfo() = default;
-        explicit LocalInfo(Ident m_name) : m_name(m_name) {}
+        explicit LocalInfo(const std::string& m_name) : m_name(m_name) {}
 
         const std::optional<std::string>& name() const { return m_name; }
 
@@ -22,7 +22,7 @@ namespace ir {
     // Represents a function in a form of a ControlFlowGraph
     class Function {
       public:
-        Function(const Ident& name, size_t argCount) : m_name(name), m_argCount(argCount) {
+        Function(const std::string& name, size_t argCount) : m_name(name), m_argCount(argCount) {
             // Push info for temporary return value variable
             m_locals.emplace_back();
         }
@@ -41,7 +41,7 @@ namespace ir {
         }
 
         // Allocate a new named local variable in this Function
-        Local newLocal(const Ident& ident) {
+        Local newLocal(const std::string& ident) {
             uint32_t id = m_locals.size();
             m_locals.emplace_back(ident);
             return Local{id};
@@ -66,7 +66,7 @@ namespace ir {
 
       private:
         // The function name
-        Ident m_name;
+        std::string m_name;
 
         // Number of arguments this function has
         size_t m_argCount;

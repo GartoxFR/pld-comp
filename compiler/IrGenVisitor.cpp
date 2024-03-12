@@ -4,9 +4,11 @@
 
 using namespace ir;
 std::any IrGenVisitor::visitProg(ifccParser::ProgContext* ctx) {
-    Ident functionName = make_ident("main");
+    std::string functionName = "main";
     m_functions.push_back(std::make_unique<Function>(functionName, 0));
     m_currentFunction = m_functions.back().get();
+
+    m_symbolTable.enterNewLocalScope();
 
     BasicBlock* prologue = m_currentFunction->newBlock();
     BasicBlock* content = m_currentFunction->newBlock();
@@ -39,23 +41,20 @@ std::any IrGenVisitor::visitConst(ifccParser::ConstContext* ctx) {
 }
 
 std::any IrGenVisitor::visitVar(ifccParser::VarContext* ctx) {
-    Ident ident = make_ident(ctx->IDENT());
+    std::string ident = ctx->IDENT()->getText();
 
     // TODO: Check if variable exists and error otherwise
 
-    return m_localTable.at(ident);
+    return m_symbolTable.getLocalVariable(ident);
 }
 
 std::any IrGenVisitor::visitInitializer(ifccParser::InitializerContext* ctx) {
 
-    Ident ident = make_ident(ctx->IDENT());
+    std::string ident = ctx->IDENT()->getText();
 
-    if (m_localTable.contains(ident)) {
-        // TODO: Error
-        return 0;
-    }
     Local local = m_currentFunction->newLocal(ident);
-    m_localTable.insert({ident, local});
+
+    m_symbolTable.declareLocalVariable(ident, local);
 
     // Variable is initialized
     if (ctx->expr()) {
@@ -65,8 +64,8 @@ std::any IrGenVisitor::visitInitializer(ifccParser::InitializerContext* ctx) {
     return 0;
 }
 std::any IrGenVisitor::visitAssign_stmt(ifccParser::Assign_stmtContext* ctx) {
-    Ident ident = make_ident(ctx->IDENT());
-    Local local = m_localTable.at(ident);
+    std::string ident = ctx->IDENT()->getText();
+    Local local = m_symbolTable.getLocalVariable(ident);
     Local res = std::any_cast<Local>(visit(ctx->expr()));
     m_currentBlock->emit<Assignment>(local, res);
     return 0;
