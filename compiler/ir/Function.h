@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BasicBlock.h"
+#include "Visitable.h"
 #include <optional>
 
 namespace ir {
@@ -21,9 +22,11 @@ namespace ir {
     };
 
     // Represents a function in a form of a ControlFlowGraph
-    class Function {
+    class Function : public Visitable {
       public:
-        Function(const std::string& name, size_t argCount) : m_name(name), m_argCount(argCount) {
+        Function(const std::string& name, size_t argCount) :
+            m_name(name), m_argCount(argCount), m_prologue(generatePrologueLabel(name)),
+            m_epilogue(generateEpilogueLabel(name)) {
             // Push info for temporary return value variable
             m_locals.emplace_back();
         }
@@ -33,6 +36,9 @@ namespace ir {
             m_blocks.push_back(std::make_unique<BasicBlock>(m_name, m_blocks.size()));
             return m_blocks.back().get();
         }
+
+        BasicBlock* prologue() { return &m_prologue; }
+        BasicBlock* epilogue() { return &m_epilogue; }
 
         // Allocate a new temporary local variable in this Function
         Local newLocal() {
@@ -60,10 +66,12 @@ namespace ir {
             out << "debug {" << std::endl;
             for (size_t i = 0; i < m_locals.size(); i++) {
                 if (!m_locals[i].isTemporary())
-                    out << "    _"  << i << " => " << m_locals[i].name().value() << std::endl;
+                    out << "    _" << i << " => " << m_locals[i].name().value() << std::endl;
             }
             out << "}" << std::endl;
         }
+
+        void accept(Visitor& visitor) override;
 
       private:
         // The function name
@@ -77,5 +85,20 @@ namespace ir {
 
         // Allocated on the heap to not invalidate pointers to BasicBlocks when resizing the vector
         std::vector<std::unique_ptr<BasicBlock>> m_blocks;
+
+        BasicBlock m_prologue;
+        BasicBlock m_epilogue;
+
+        static std::string generatePrologueLabel(const std::string& functionName) {
+            std::stringstream ss;
+            ss << "." << functionName << ".prologue";
+            return ss.str();
+        }
+
+        static std::string generateEpilogueLabel(const std::string& functionName) {
+            std::stringstream ss;
+            ss << "." << functionName << ".epilogue";
+            return ss.str();
+        }
     };
 }

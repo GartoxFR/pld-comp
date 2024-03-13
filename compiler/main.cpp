@@ -58,9 +58,7 @@ int main(int argn, const char** argv) {
             return 1;
         }
 
-        for (const auto& function : visitor.functions()) {
-            function->printLocalMapping(cout);
-            for (const auto& block : function->blocks()) {
+        auto printBlock = [&](const auto& block) {
                 cout << block->label() << endl;
                 for (const auto& instr : block->instructions()) {
                     cout << "    " << *instr << endl;
@@ -69,7 +67,14 @@ int main(int argn, const char** argv) {
                 if (block->terminator()) {
                     cout << "    " << *block->terminator() << endl;
                 }
+        };
+        for (const auto& function : visitor.functions()) {
+            function->printLocalMapping(cout);
+            printBlock(function->prologue());
+            for (const auto& block : function->blocks()) {
+                printBlock(block);
             }
+            printBlock(function->epilogue());
         }
         return 0;
     }

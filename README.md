@@ -24,11 +24,11 @@ make test -j    # Build the project and execute the tests
 using namespace ir;
 
 // Declare a funtion named "main" with no arguments
-Function function{make_ident("main"), 0};
+Function function{"main", 0};
 
 // Declare variables
-Local foo = function.newLocal(make_ident("foo"));
-Local bar = function.newLocal(make_ident("bar"));
+Local foo = function.newLocal("foo");
+Local bar = function.newLocal("bar");
 
 // Declare temporaries
 Local temp1 = function.newLocal();

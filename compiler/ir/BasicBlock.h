@@ -6,16 +6,20 @@
 
 namespace ir {
     class Terminator;
+    class BasicBlock;
 
     // A block in the ControlFlowGraph
     // It's composed of a list of Instruction and a Terminator
     // The Terminator is null if the block is the epilogue or if it's still in construction
-    class BasicBlock {
+    class BasicBlock : public Visitable {
       public:
         BasicBlock(const std::string& functionName, uint32_t id) {
             std::stringstream labelStream;
             labelStream << "." << functionName << ".BB" << id; 
             m_label = labelStream.str();
+        }
+
+        BasicBlock(const std::string& customLabel) : m_label(customLabel) {
         }
 
         // Append an instruction of type InstructionT to the block and return a pointer to it.
@@ -60,6 +64,8 @@ namespace ir {
 
         auto& terminator() { return m_terminator; }
         const auto& terminator() const { return m_terminator; }
+
+        void accept(Visitor& visitor) override;
 
         friend inline std::ostream& operator<<(std::ostream& out, const BasicBlock& self) {
             return out << "BasicBlock(label = " << self.label() << "instructionCount = " << self.instructions().size()

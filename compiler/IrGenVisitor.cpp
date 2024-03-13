@@ -10,9 +10,9 @@ std::any IrGenVisitor::visitProg(ifccParser::ProgContext* ctx) {
 
     m_symbolTable.enterNewLocalScope();
 
-    BasicBlock* prologue = m_currentFunction->newBlock();
+    BasicBlock* prologue = m_currentFunction->prologue();
     BasicBlock* content = m_currentFunction->newBlock();
-    BasicBlock* epilogue = m_currentFunction->newBlock();
+    BasicBlock* epilogue = m_currentFunction->epilogue();
 
     prologue->terminate<BasicJump>(content);
     content->terminate<BasicJump>(epilogue);

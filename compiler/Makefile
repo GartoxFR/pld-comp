@@ -22,6 +22,8 @@ OBJECTS=build/ifccBaseVisitor.o \
 	build/SymbolTableVisitor.o \
 	build/IrGenVisitor.o \
 	build/ir/Instructions.o \
+	build/ir/BasicBlock.o \
+	build/ir/Function.o \
 	build/ir/Terminators.o
 
 ifcc: $(OBJECTS)

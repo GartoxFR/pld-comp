@@ -23,7 +23,7 @@ void X86GenVisitor::visit(ir::BinaryOp& binaryOp) {
             [&](Local& left, Immediate& right) {
                 // Left member is a local variable and right is an immediate
             },
-            [&](Immediate& right, Local& left) {
+            [&](Immediate& left, Local& right) {
 
             },
             [&](Local& right, Local& left) {},
