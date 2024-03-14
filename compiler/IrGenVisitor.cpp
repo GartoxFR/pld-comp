@@ -56,6 +56,32 @@ std::any IrGenVisitor::visitBlock(ifccParser::BlockContext *ctx) {
     return 0;
 }
 
+std::any IrGenVisitor::visitIf(ifccParser::IfContext *ctx) {
+    Local cond = std::any_cast<Local>(visit(ctx->expr()));
+
+    BasicBlock* thenBlock = m_currentFunction->newBlock();
+    BasicBlock* elseBlock = m_currentFunction->newBlock();
+    BasicBlock* endBlock = m_currentFunction->newBlock();
+
+    endBlock->terminate<ConditionalJump>(cond, thenBlock, elseBlock);
+    m_currentBlock->terminator().swap(endBlock->terminator());
+
+    thenBlock->terminate<BasicJump>(endBlock);
+    elseBlock->terminate<BasicJump>(endBlock);
+
+    m_currentBlock = thenBlock;
+    visit(ctx->then);
+
+    if (ctx->else_) {
+        m_currentBlock = elseBlock;
+        visit(ctx->else_);
+    }
+
+    m_currentBlock = endBlock;
+    
+    return 0;
+}
+
 std::any IrGenVisitor::visitInitializer(ifccParser::InitializerContext* ctx) {
 
     std::string ident = ctx->IDENT()->getText();

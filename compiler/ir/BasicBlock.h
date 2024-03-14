@@ -57,6 +57,10 @@ namespace ir {
             return ptr;
         }
 
+        void terminate(std::unique_ptr<Terminator>&& terminator) {
+            m_terminator = std::move(terminator);
+        }
+
         const std::string& label() const { return m_label; }
 
         auto& instructions() { return m_instructions; }

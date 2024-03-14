@@ -24,6 +24,7 @@ void X86GenVisitor::visit(ir::Function& function) {
         visit(*block);
     }
     visit(*function.epilogue());
+    loadEax(function.returnLocal());
 
     std::cout << "    movq    %rbp, %rsp\n";
     std::cout << "    popq    %rbp\n";
@@ -101,9 +102,15 @@ void X86GenVisitor::visit(ir::Assignment& assignment) {
 }
 
 void X86GenVisitor::visit(ir::BasicJump& jump) {
-    //TODO: Generate asm
     m_out << "    jmp     " << jump.target()->label() << "\n";
 }
 void X86GenVisitor::visit(ir::ConditionalJump& jump) {
-    //TODO: Generate asm
+    if (std::holds_alternative<Local>(jump.condition())) {
+        loadEax(std::get<Local>(jump.condition()));
+    } else {
+        loadEax(std::get<Immediate>(jump.condition()));
+    }
+    m_out << "    test    %eax, %eax\n";
+    m_out << "    jne     " << jump.trueTarget()->label() << "\n";
+    m_out << "    jmp     " << jump.falseTarget()->label() << "\n";
 }
