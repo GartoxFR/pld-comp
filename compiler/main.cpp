@@ -6,6 +6,7 @@
 #include <variant>
 
 #include "IrGenVisitor.h"
+#include "IrPrintVisitor.h"
 #include "SymbolTableVisitor.h"
 #include "antlr4-runtime.h"
 #include "generated/ifccLexer.h"
@@ -58,24 +59,11 @@ int main(int argn, const char** argv) {
             return 1;
         }
 
-        auto printBlock = [&](const auto& block) {
-                cout << block->label() << endl;
-                for (const auto& instr : block->instructions()) {
-                    cout << "    " << *instr << endl;
-                }
-
-                if (block->terminator()) {
-                    cout << "    " << *block->terminator() << endl;
-                }
-        };
-        for (const auto& function : visitor.functions()) {
-            function->printLocalMapping(cout);
-            printBlock(function->prologue());
-            for (const auto& block : function->blocks()) {
-                printBlock(block);
-            }
-            printBlock(function->epilogue());
+        IrPrintVisitor printer(cout);
+        for (auto& function : visitor.functions()) {
+            printer.visit(*function);
         }
+
         return 0;
     }
 

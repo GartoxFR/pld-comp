@@ -25,11 +25,8 @@ namespace ir {
     class Function : public Visitable {
       public:
         Function(const std::string& name, size_t argCount) :
-            m_name(name), m_argCount(argCount), m_prologue(generatePrologueLabel(name)),
-            m_epilogue(generateEpilogueLabel(name)) {
-            // Push info for temporary return value variable
-            m_locals.emplace_back();
-        }
+            m_name(name), m_argCount(argCount), m_locals(1), m_prologue(generatePrologueLabel(name)),
+            m_epilogue(generateEpilogueLabel(name)) {}
 
         // Allocate a new BasicBlock for this function
         BasicBlock* newBlock() {
@@ -63,7 +60,7 @@ namespace ir {
         const auto& blocks() const { return m_blocks; }
 
         void printLocalMapping(std::ostream& out) const {
-            out << "debug {" << std::endl;
+            out << "debug " << m_name << " {" << std::endl;
             for (size_t i = 0; i < m_locals.size(); i++) {
                 if (!m_locals[i].isTemporary())
                     out << "    _" << i << " => " << m_locals[i].name().value() << std::endl;
