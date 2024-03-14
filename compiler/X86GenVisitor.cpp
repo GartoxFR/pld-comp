@@ -102,6 +102,7 @@ void X86GenVisitor::visit(ir::Assignment& assignment) {
 
 void X86GenVisitor::visit(ir::BasicJump& jump) {
     //TODO: Generate asm
+    m_out << "    jmp     " << jump.target()->label() << "\n";
 }
 void X86GenVisitor::visit(ir::ConditionalJump& jump) {
     //TODO: Generate asm

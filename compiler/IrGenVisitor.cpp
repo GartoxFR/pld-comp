@@ -48,6 +48,14 @@ std::any IrGenVisitor::visitVar(ifccParser::VarContext* ctx) {
     return m_symbolTable.getLocalVariable(ident);
 }
 
+std::any IrGenVisitor::visitBlock(ifccParser::BlockContext *ctx) {
+    m_symbolTable.enterNewLocalScope();
+    visitChildren(ctx);
+    m_symbolTable.exitLocalScope();
+    
+    return 0;
+}
+
 std::any IrGenVisitor::visitInitializer(ifccParser::InitializerContext* ctx) {
 
     std::string ident = ctx->IDENT()->getText();

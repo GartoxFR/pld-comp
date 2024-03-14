@@ -5,7 +5,9 @@ axiom : prog EOF ;
 prog : 'int' 'main' '(' ')' '{' stmt* return_stmt '}' ;
 
 
-stmt : assign_stmt | declare_stmt ;
+stmt : assign_stmt | declare_stmt | block;
+
+block : '{' stmt* '}' ;
 
 assign_stmt : IDENT '=' expr ';' ;
 
