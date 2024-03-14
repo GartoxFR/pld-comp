@@ -58,6 +58,8 @@ namespace ir {
         size_t argCount() const { return m_argCount; }
 
         const auto& blocks() const { return m_blocks; }
+        
+        const auto& locals() const { return m_locals; }
 
         void printLocalMapping(std::ostream& out) const {
             out << "debug " << m_name << " {" << std::endl;

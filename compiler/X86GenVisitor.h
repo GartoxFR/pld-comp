@@ -1,13 +1,37 @@
 #pragma once
 
+#include "ir/Instructions.h"
 #include "ir/Ir.h"
 
 class X86GenVisitor : public ir::Visitor {
   public:
+    X86GenVisitor(std::ostream& out) : m_out(out) {}
+
     void visit(ir::Function &function) override;
     void visit(ir::BasicBlock &block) override;
     void visit(ir::BinaryOp& binaryOp) override;
+    void visit(ir::UnaryOp& unaryOp) override;
     void visit(ir::Assignment& assignment) override;
     void visit(ir::BasicJump& jump) override;
     void visit(ir::ConditionalJump& jump) override;
+
+  private:
+    std::ostream& m_out;
+
+    void loadEax(const ir::Local& local) {
+        m_out << "    movl    " << variableLocation(local) << ", %eax\n";
+    }
+    void loadEax(const ir::Immediate& immediate) {
+        m_out << "    movl    $" << immediate.value() << ", %eax\n";
+    }
+
+    void saveEax(const ir::Local& local) {
+        m_out << "    movl    %eax, " << variableLocation(local) << "\n";
+    }
+
+    std::string variableLocation(const ir::Local& local) {
+        std::stringstream ss;
+        ss << "-" << (local.id() + 1) * 4 << "(%rbp)";
+        return ss.str();
+    }
 };

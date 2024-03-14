@@ -8,6 +8,7 @@
 #include "IrGenVisitor.h"
 #include "IrPrintVisitor.h"
 #include "SymbolTableVisitor.h"
+#include "X86GenVisitor.h"
 #include "antlr4-runtime.h"
 #include "generated/ifccLexer.h"
 #include "generated/ifccParser.h"
@@ -59,9 +60,16 @@ int main(int argn, const char** argv) {
             return 1;
         }
 
-        IrPrintVisitor printer(cout);
+        IrPrintVisitor printer(cerr);
         for (auto& function : visitor.functions()) {
             printer.visit(*function);
+        }
+
+        cerr << endl << endl;
+
+        X86GenVisitor gen(cout);
+        for (auto& function : visitor.functions()) {
+            gen.visit(*function);
         }
 
         return 0;

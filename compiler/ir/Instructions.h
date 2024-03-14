@@ -132,7 +132,7 @@ namespace ir {
         void accept(Visitor& visitor) override;
 
         const Local& destination() const { return m_destination; }
-        const RValue& left() const { return m_operand; }
+        const RValue& operand() const { return m_operand; }
         UnaryOpKind operation() const { return m_operation; }
 
       private:
