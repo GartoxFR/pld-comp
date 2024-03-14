@@ -71,12 +71,12 @@ std::any IrGenVisitor::visitInitializer(ifccParser::InitializerContext* ctx) {
     }
     return 0;
 }
-std::any IrGenVisitor::visitAssign_stmt(ifccParser::Assign_stmtContext* ctx) {
+std::any IrGenVisitor::visitAssign(ifccParser::AssignContext* ctx) {
     std::string ident = ctx->IDENT()->getText();
     Local local = m_symbolTable.getLocalVariable(ident);
     Local res = std::any_cast<Local>(visit(ctx->expr()));
     m_currentBlock->emit<Assignment>(local, res);
-    return 0;
+    return local;
 }
 
 std::any IrGenVisitor::visitSumOp(ifccParser::SumOpContext* ctx) {

@@ -50,7 +50,7 @@ std::any CodeGenVisitor::visitInitializer(ifccParser::InitializerContext* ctx) {
     return 0;
 }
 
-std::any CodeGenVisitor::visitAssign_stmt(ifccParser::Assign_stmtContext* ctx) {
+std::any CodeGenVisitor::visitAssign(ifccParser::AssignContext* ctx) {
     int temp = std::any_cast<int>(visit(ctx->expr()));
     loadVariable(temp);
     storeVariable(globalSymbolTable[ctx->IDENT()->getText()]);

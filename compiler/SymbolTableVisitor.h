@@ -7,7 +7,7 @@ class SymbolTableVisitor : public ifccBaseVisitor {
   public:
     std::any visitVar(ifccParser::VarContext* context) override;
     std::any visitDeclare_stmt(ifccParser::Declare_stmtContext* context) override;
-    std::any visitAssign_stmt(ifccParser::Assign_stmtContext* ctx) override;
+    std::any visitAssign(ifccParser::AssignContext* ctx) override;
 
     bool createSymbolTable(antlr4::tree::ParseTree* axiom) {
         this->visit(axiom);

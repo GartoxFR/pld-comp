@@ -14,7 +14,7 @@ class CodeGenVisitor : public ifccBaseVisitor {
     std::any visitVar(ifccParser::VarContext* ctx) override;
 
     std::any visitInitializer(ifccParser::InitializerContext* ctx) override;
-    std::any visitAssign_stmt(ifccParser::Assign_stmtContext* ctx) override;
+    std::any visitAssign(ifccParser::AssignContext* ctx) override;
 
     std::any visitSumOp(ifccParser::SumOpContext* ctx) override;
     std::any visitProductOp(ifccParser::ProductOpContext* ctx) override;

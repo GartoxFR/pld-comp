@@ -38,7 +38,7 @@ std::any SymbolTableVisitor::visitDeclare_stmt(ifccParser::Declare_stmtContext* 
     return 0;
 }
 
-std::any SymbolTableVisitor::visitAssign_stmt(ifccParser::Assign_stmtContext* ctx) {
+std::any SymbolTableVisitor::visitAssign(ifccParser::AssignContext* ctx) {
     Ident ident = make_ident(ctx->IDENT());
 
     if (!globalSymbolTable.contains(ident)) {
