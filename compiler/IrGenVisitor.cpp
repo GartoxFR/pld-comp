@@ -3,8 +3,9 @@
 #include "ir/Instructions.h"
 
 using namespace ir;
-std::any IrGenVisitor::visitProg(ifccParser::ProgContext* ctx) {
-    std::string functionName = "main";
+
+std::any IrGenVisitor::visitFunction(ifccParser::FunctionContext *ctx)  {
+    std::string functionName = ctx->IDENT()->getText();
     m_functions.push_back(std::make_unique<Function>(functionName, 0));
     m_currentFunction = m_functions.back().get();
 
@@ -29,6 +30,14 @@ std::any IrGenVisitor::visitReturn_stmt(ifccParser::Return_stmtContext* ctx) {
     Local returnLocal = m_currentFunction->returnLocal();
 
     m_currentBlock->emit<Assignment>(returnLocal, res);
+
+    m_currentBlock->terminate<BasicJump>(m_currentFunction->epilogue());
+
+    BasicBlock* unreachableBlock = m_currentFunction->newBlock();
+    unreachableBlock->terminate<BasicJump>(m_currentFunction->epilogue());
+
+    m_currentBlock = unreachableBlock;
+    
 
     return 0;
 }

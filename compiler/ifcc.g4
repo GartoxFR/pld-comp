@@ -1,11 +1,12 @@
 grammar ifcc;
 
-axiom : prog EOF ;
+axiom : function* EOF ;
 
-prog : 'int' 'main' '(' ')' '{' stmt* return_stmt '}' ;
+function : INT IDENT '(' (functionArg (',' functionArg)*)? ')' block;
 
+functionArg : INT IDENT ;
 
-stmt : expr ';' | declare_stmt | block | if | while;
+stmt : expr ';' | declare_stmt | block | if | while | return_stmt;
 
 if: IF '(' expr ')' then=stmt ( ELSE else=stmt )? ;
 

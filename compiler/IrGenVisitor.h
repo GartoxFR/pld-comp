@@ -8,7 +8,7 @@
 
 class IrGenVisitor : public ifccBaseVisitor {
   public:
-    std::any visitProg(ifccParser::ProgContext* ctx) override;
+    std::any visitFunction(ifccParser::FunctionContext *ctx) override;
     std::any visitReturn_stmt(ifccParser::Return_stmtContext* ctx) override;
 
     std::any visitConst(ifccParser::ConstContext* ctx) override;
