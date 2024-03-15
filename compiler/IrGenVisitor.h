@@ -23,6 +23,9 @@ class IrGenVisitor : public ifccBaseVisitor {
 
     std::any visitSumOp(ifccParser::SumOpContext* ctx) override;
     std::any visitProductOp(ifccParser::ProductOpContext* ctx) override;
+    std::any visitCmpOp(ifccParser::CmpOpContext *ctx) override;
+    std::any visitEqOp(ifccParser::EqOpContext *ctx) override;
+    std::any visitUnaryOp(ifccParser::UnaryOpContext* ctx) override;
     std::any visitUnarySumOp(ifccParser::UnarySumOpContext* ctx) override;
 
     std::any visitPar(ifccParser::ParContext* ctx) override { return visit(ctx->expr()); }

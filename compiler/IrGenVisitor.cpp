@@ -150,6 +150,34 @@ std::any IrGenVisitor::visitProductOp(ifccParser::ProductOpContext* ctx) {
     return visitBinaryOp(ctx->expr(0), ctx->expr(1), op);
 }
 
+std::any IrGenVisitor::visitCmpOp(ifccParser::CmpOpContext* ctx) {
+    BinaryOpKind op;
+    std::string opStr = ctx->CMP_OP()->getText();
+
+    if (opStr == ">=") {
+        op = BinaryOpKind::CMP_GE;
+    } else if (opStr == "<=") {
+        op = BinaryOpKind::CMP_LE;
+    } else if (opStr == ">") {
+        op = BinaryOpKind::CMP_G;
+    } else {
+        op = BinaryOpKind::CMP_L;
+    }
+
+    return visitBinaryOp(ctx->expr(0), ctx->expr(1), op);
+}
+
+std::any IrGenVisitor::visitEqOp(ifccParser::EqOpContext* ctx) {
+    BinaryOpKind op;
+    if (ctx->EQ_OP()->getText() == "==") {
+        op = BinaryOpKind::EQ;
+    } else {
+        op = BinaryOpKind::NEQ;
+    }
+
+    return visitBinaryOp(ctx->expr(0), ctx->expr(1), op);
+}
+
 std::any
 IrGenVisitor::visitBinaryOp(ifccParser::ExprContext* left, ifccParser::ExprContext* right, ir::BinaryOpKind op) {
     Local res = m_currentFunction->newLocal();
@@ -166,11 +194,20 @@ std::any IrGenVisitor::visitUnaryOp(ifccParser::ExprContext* operand, ir::UnaryO
     return res;
 }
 
-std::any IrGenVisitor::visitUnarySumOp(ifccParser::UnarySumOpContext* ctx) {
-    if (ctx->SUM_OP()->getText() == "-") {
-        return visitUnaryOp(ctx->expr(), UnaryOpKind::MINUS);
-    } else {
-        // Nothing to do for unary "+"
-        return visit(ctx->expr());
+std::any IrGenVisitor::visitUnaryOp(ifccParser::UnaryOpContext* ctx) {
+    UnaryOpKind kind;
+    switch (ctx->UNARY_OP()->getText()[0]) {
+        case '!': kind = UnaryOpKind::NOT; break;
+        default: return visit(ctx->expr());
     }
+    return visitUnaryOp(ctx->expr(), kind);
+}
+
+std::any IrGenVisitor::visitUnarySumOp(ifccParser::UnarySumOpContext* ctx) {
+    UnaryOpKind kind;
+    switch (ctx->SUM_OP()->getText()[0]) {
+        case '-': kind = UnaryOpKind::MINUS; break;
+        default: return visit(ctx->expr());
+    }
+    return visitUnaryOp(ctx->expr(), kind);
 }

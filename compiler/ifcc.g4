@@ -18,8 +18,11 @@ declare_stmt : INT idents+=initializer (',' idents+=initializer)* ';' ;
 initializer : IDENT ('=' expr | ) ;
 
 expr: SUM_OP expr # unarySumOp
+    | UNARY_OP expr # unaryOp
     | expr PRODUCT_OP expr # productOp
     | expr SUM_OP expr # sumOp
+    | expr CMP_OP expr # cmpOp
+    | expr EQ_OP expr # eqOp
     | IDENT '=' expr # assign
     | CONST # const
     | IDENT # var 
@@ -36,7 +39,10 @@ WHILE : 'while' ;
 ELSE : 'else' ;
 
 SUM_OP : '+' | '-' ;
+UNARY_OP : '!' ;
 PRODUCT_OP : '*' ;
+CMP_OP : '>' | '<' | '>=' | '<=' ;
+EQ_OP : '==' | '!=' ;
 CONST : [0-9]+ ;
 IDENT : [a-zA-Z][a-zA-Z0-9]* ;
 COMMENT : '/*' .*? '*/' -> skip ;

@@ -8,15 +8,12 @@
 #include "IrGenVisitor.h"
 #include "IrPrintVisitor.h"
 #include "IrGraphVisitor.h"
-#include "SymbolTableVisitor.h"
 #include "X86GenVisitor.h"
 #include "antlr4-runtime.h"
 #include "generated/ifccLexer.h"
 #include "generated/ifccParser.h"
 #include "generated/ifccBaseVisitor.h"
 #include "ir/Ir.h"
-
-#include "CodeGenVisitor.h"
 
 using namespace antlr4;
 using namespace std;
@@ -82,18 +79,6 @@ int main(int argn, const char** argv) {
 
         return 0;
     }
-
-    SymbolTableVisitor symbolTableVisitor;
-
-    if (!symbolTableVisitor.createSymbolTable(tree)) {
-        cerr << "Des erreurs sont survenus lors de la création de la table des "
-                "symboles. Abandon."
-             << endl;
-        return 1;
-    }
-
-    CodeGenVisitor v;
-    v.visit(tree);
 
     return 0;
 }

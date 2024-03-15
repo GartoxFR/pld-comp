@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../SymbolTable.h"
 #include "Visitable.h"
 #include <cstdint>
 #include <ostream>
@@ -70,6 +69,12 @@ namespace ir {
         SUB,
         MUL,
         DIV,
+        EQ,
+        NEQ,
+        CMP_L,
+        CMP_G,
+        CMP_LE,
+        CMP_GE,
     };
 
     inline std::ostream& operator<<(std::ostream& out, const BinaryOpKind& op) {
@@ -78,6 +83,12 @@ namespace ir {
             case BinaryOpKind::SUB: return out << "-";
             case BinaryOpKind::MUL: return out << "*";
             case BinaryOpKind::DIV: return out << "/";
+            case BinaryOpKind::EQ: return out << "==";
+            case BinaryOpKind::NEQ: return out << "!=";
+            case BinaryOpKind::CMP_L: return out << "<";
+            case BinaryOpKind::CMP_G: return out << ">";
+            case BinaryOpKind::CMP_LE: return out << "<=";
+            case BinaryOpKind::CMP_GE: return out << ">=";
         }
         return out;
     }
@@ -110,11 +121,13 @@ namespace ir {
 
     enum class UnaryOpKind {
         MINUS,
+        NOT,
     };
 
     inline std::ostream& operator<<(std::ostream& out, const UnaryOpKind& op) {
         switch (op) {
             case UnaryOpKind::MINUS: return out << "-";
+            case UnaryOpKind::NOT: return out << "!";
         }
         return out;
     }

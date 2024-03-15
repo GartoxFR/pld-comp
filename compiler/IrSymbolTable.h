@@ -1,9 +1,11 @@
 #pragma once
 
 #include "ir/Instructions.h"
+#include <iostream>
 #include <ranges>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 class IrSymbolTable {
   public:

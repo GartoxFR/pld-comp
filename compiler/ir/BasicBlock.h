@@ -3,6 +3,7 @@
 #include "Instructions.h"
 #include <memory>
 #include <vector>
+#include <sstream>
 
 namespace ir {
     class Terminator;

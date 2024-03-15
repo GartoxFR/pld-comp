@@ -3,6 +3,7 @@
 #include "BasicBlock.h"
 #include "Visitable.h"
 #include <optional>
+#include <sstream>
 
 namespace ir {
 
