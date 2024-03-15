@@ -7,6 +7,7 @@
 
 #include "IrGenVisitor.h"
 #include "IrPrintVisitor.h"
+#include "IrGraphVisitor.h"
 #include "SymbolTableVisitor.h"
 #include "X86GenVisitor.h"
 #include "antlr4-runtime.h"
@@ -66,6 +67,13 @@ int main(int argn, const char** argv) {
         }
 
         cerr << endl << endl;
+
+        ofstream file("graph.dot");
+
+        IrGraphVisitor cfg(file);
+        for (auto& function : visitor.functions()) {
+            cfg.visit(*function);
+        }
 
         X86GenVisitor gen(cout);
         for (auto& function : visitor.functions()) {

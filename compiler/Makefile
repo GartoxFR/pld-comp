@@ -25,6 +25,7 @@ OBJECTS=build/ifccBaseVisitor.o \
 	build/ir/BasicBlock.o \
 	build/ir/Function.o \
 	build/IrPrintVisitor.o \
+	build/IrGraphVisitor.o \
 	build/X86GenVisitor.o \
 	build/ir/Terminators.o
 
