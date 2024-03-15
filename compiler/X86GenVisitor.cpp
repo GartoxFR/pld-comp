@@ -13,7 +13,7 @@ static const char* CALL_REGISTER[] = {
 
 void X86GenVisitor::visit(ir::Function& function) {
     m_out << ".global " << function.name() << "\n";
-    m_out << function.name() << ":";
+    m_out << function.name() << ":\n";
     m_out << "    pushq   %rbp\n";
     m_out << "    movq    %rsp, %rbp\n";
     m_out << "    subq    $" << function.locals().size() * 4 << ", %rsp\n";

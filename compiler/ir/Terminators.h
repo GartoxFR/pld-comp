@@ -59,6 +59,7 @@ namespace ir {
         BasicBlock* falseTarget() { return m_falseTarget; }
 
         const RValue& condition() const { return m_condition; }
+        RValue& condition() { return m_condition; }
 
       private:
         RValue m_condition;

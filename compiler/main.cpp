@@ -5,9 +5,11 @@
 #include <cstdlib>
 #include <variant>
 
+#include "DeadCodeElimination.h"
 #include "IrGenVisitor.h"
 #include "IrPrintVisitor.h"
 #include "IrGraphVisitor.h"
+#include "IrValuePropagationVisitor.h"
 #include "X86GenVisitor.h"
 #include "antlr4-runtime.h"
 #include "generated/ifccLexer.h"
@@ -56,22 +58,23 @@ int main(int argn, const char** argv) {
         return 1;
     }
 
-    IrPrintVisitor printer(cerr);
-    for (auto& function : visitor.functions()) {
-        printer.visit(*function);
-    }
-
-    cerr << endl << endl;
-
     ofstream file("graph.dot");
 
+    IrPrintVisitor printer(cerr);
     IrGraphVisitor cfg(file);
-    for (auto& function : visitor.functions()) {
-        cfg.visit(*function);
-    }
-
     X86GenVisitor gen(cout);
     for (auto& function : visitor.functions()) {
+        bool changed;
+        do {
+            IrValuePropagationVisitor propagator;
+            DeadCodeElimination deadCodeElimination;
+            propagator.visit(*function);
+            deadCodeElimination.visit(*function);
+
+            changed = propagator.changed() || deadCodeElimination.changed();
+        } while(changed);
+        printer.visit(*function);
+        cfg.visit(*function);
         gen.visit(*function);
     }
 
