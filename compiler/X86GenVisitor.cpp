@@ -4,13 +4,12 @@
 
 using namespace ir;
 
-template <typename... Ts>
-class overload : Ts... {
-    using Ts::operator()...;
+static const char* CALL_REGISTER[] = {
+    "%edi",
+    "%esi",
+    "%edx",
+    "%ecx",
 };
-
-template <typename... Ts>
-overload(Ts...) -> overload<Ts...>;
 
 void X86GenVisitor::visit(ir::Function& function) {
     m_out << ".global " << function.name() << "\n";
@@ -18,6 +17,10 @@ void X86GenVisitor::visit(ir::Function& function) {
     m_out << "    pushq   %rbp\n";
     m_out << "    movq    %rsp, %rbp\n";
     m_out << "    subq    $" << function.locals().size() * 4 << ", %rsp\n";
+
+    for (size_t i = 0; i < function.argCount(); i++) {
+        m_out << "    movl    " << CALL_REGISTER[i] << ", " << variableLocation(Local(i + 1)) << "\n";
+    }
 
     visit(*function.prologue());
     for (auto& block : function.blocks()) {
@@ -147,4 +150,20 @@ void X86GenVisitor::visit(ir::ConditionalJump& jump) {
     m_out << "    test    %eax, %eax\n";
     m_out << "    jne     " << jump.trueTarget()->label() << "\n";
     m_out << "    jmp     " << jump.falseTarget()->label() << "\n";
+}
+
+void X86GenVisitor::visit(ir::Call& call) {
+    for (size_t i = 0; i < call.args().size(); i++) {
+        RValue arg = call.args()[i];
+        if (std::holds_alternative<Local>(arg)) {
+            Local argLocal = std::get<Local>(arg);
+            m_out << "    movl    " << variableLocation(argLocal) << ", " << CALL_REGISTER[i] << "\n";
+        } else {
+            Immediate argLocal = std::get<Immediate>(arg);
+            m_out << "    movl    $" << argLocal.value() << ", " << CALL_REGISTER[i] << "\n";
+        }
+    }
+
+    m_out << "    call   " << call.name() << "\n";
+    saveEax(call.destination());
 }

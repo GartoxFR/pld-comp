@@ -5,11 +5,19 @@
 using namespace ir;
 
 std::any IrGenVisitor::visitFunction(ifccParser::FunctionContext *ctx)  {
+    m_symbolTable.enterNewLocalScope();
+
     std::string functionName = ctx->IDENT()->getText();
-    m_functions.push_back(std::make_unique<Function>(functionName, 0));
+    m_functions.push_back(std::make_unique<Function>(functionName, ctx->functionArg().size()));
     m_currentFunction = m_functions.back().get();
 
-    m_symbolTable.enterNewLocalScope();
+    m_symbolTable.declareFunction(*m_currentFunction);
+
+    for (auto arg : ctx->functionArg()) {
+        std::string argName = arg->IDENT()->getText();
+        Local argLocal = m_currentFunction->newLocal(argName);
+        m_symbolTable.declareLocalVariable(argName, argLocal);
+    }
 
     BasicBlock* prologue = m_currentFunction->prologue();
     BasicBlock* content = m_currentFunction->newBlock();
@@ -219,4 +227,22 @@ std::any IrGenVisitor::visitUnarySumOp(ifccParser::UnarySumOpContext* ctx) {
         default: return visit(ctx->expr());
     }
     return visitUnaryOp(ctx->expr(), kind);
+}
+
+std::any IrGenVisitor::visitCall(ifccParser::CallContext *ctx) {
+    if (!m_symbolTable.checkFunction(ctx->IDENT()->getText(), ctx->expr().size())) {
+        return m_currentFunction->newLocal();
+    }
+
+    Local res = m_currentFunction->newLocal();
+    std::vector<RValue> args;
+    args.reserve(ctx->expr().size());
+    for (auto& arg : ctx->expr()) {
+        Local local = std::any_cast<Local>(visit(arg));
+        args.push_back(local);
+    }
+
+    m_currentBlock->emit<Call>(res, ctx->IDENT()->getText(), args);
+
+    return res;
 }

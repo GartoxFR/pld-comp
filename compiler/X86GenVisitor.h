@@ -15,6 +15,7 @@ class X86GenVisitor : public ir::Visitor {
     void visit(ir::Assignment& assignment) override;
     void visit(ir::BasicJump& jump) override;
     void visit(ir::ConditionalJump& jump) override;
+    void visit(ir::Call& call) override;
 
     void emitSimpleArithmetic(std::string_view instr, const ir::BinaryOp& binaryOp);
     void emitEq(const ir::BinaryOp& binaryOp);

@@ -33,6 +33,7 @@ namespace ir {
         virtual void visit(BinaryOp&) {}
         virtual void visit(UnaryOp&) {}
         virtual void visit(Assignment&) {}
+        virtual void visit(Call&) {}
 
         //  Terminators
         virtual void visit(BasicJump&) {}

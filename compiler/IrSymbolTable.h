@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ir/Function.h"
 #include "ir/Instructions.h"
 #include <iostream>
 #include <ranges>
@@ -15,7 +16,7 @@ class IrSymbolTable {
 
     void exitLocalScope() { m_localScopeStack.pop_back(); }
 
-    void declareLocalVariable(const std::string& str, ir::Local localVariable) {
+    void declareLocalVariable(std::string str, ir::Local localVariable) {
         VariableScope& currentScope = m_localScopeStack.back();
 
         if (currentScope.contains(str)) {
@@ -24,7 +25,7 @@ class IrSymbolTable {
             return;
         }
 
-        currentScope.insert({str, localVariable});
+        currentScope.insert({std::move(str), localVariable});
     }
 
     ir::Local getLocalVariable(const std::string& str) {
@@ -42,9 +43,36 @@ class IrSymbolTable {
         return ir::Local{INT32_MAX};
     }
 
+    void declareFunction(ir::Function& function) {
+
+        if (m_functions.contains(function.name())) {
+            m_error = true;
+            std::cerr << "Error: Function " << function.name() << " already declared in this scope." << std::endl;
+            return;
+        }
+
+        m_functions.insert({function.name(), &function});
+    }
+
+    bool checkFunction(const std::string& name, size_t argCount) {
+        auto it = m_functions.find(name);
+        if (it == m_functions.end()) {
+            m_error = true;
+            return false;
+        }
+
+        if (it->second->argCount() != argCount) {
+            m_error = true;
+            return false;
+        }
+
+        return true;
+    }
+
   private:
     using VariableScope = std::unordered_map<std::string, ir::Local>;
 
     std::vector<VariableScope> m_localScopeStack;
+    std::unordered_map<std::string, ir::Function*> m_functions;
     bool m_error = false;
 };

@@ -6,6 +6,7 @@
 #include <string>
 #include <variant>
 #include <unordered_map>
+#include <vector>
 
 namespace ir {
     // Any linear Instruction in the IR (no jumps)
@@ -138,9 +139,7 @@ namespace ir {
         UnaryOp(const Local& destination, const RValue& operand, UnaryOpKind operation) :
             Instruction(), m_destination(destination), m_operand(operand), m_operation(operation) {}
 
-        void print(std::ostream& out) const override {
-            out << m_destination << " := " << m_operation << m_operand;
-        }
+        void print(std::ostream& out) const override { out << m_destination << " := " << m_operation << m_operand; }
 
         void accept(Visitor& visitor) override;
 
@@ -171,6 +170,36 @@ namespace ir {
       private:
         Local m_destination;
         RValue m_source;
+    };
+
+    class Call : public Instruction {
+      public:
+        Call(const Local& destination, std::string name, std::vector<RValue> args) :
+            Instruction(), m_destination(destination), m_name(std::move(name)), m_args(std::move(args)) {}
+
+        void print(std::ostream& out) const override {
+            out << m_destination << " := " << m_name << "(";
+            bool first = true;
+            for (auto& arg : m_args) {
+                if (!first) out << ", ";
+                first = false;
+                out << arg;
+            }
+            out << ")";
+        }
+
+        const Local& destination() const { return m_destination; }
+
+        const auto& name() const { return m_name; }
+
+        const auto& args() const { return m_args; }
+
+        void accept(Visitor& visitor) override;
+
+      private:
+        Local m_destination;
+        std::string m_name;
+        std::vector<RValue> m_args;
     };
 }
 

@@ -18,7 +18,8 @@ declare_stmt : INT idents+=initializer (',' idents+=initializer)* ';' ;
 
 initializer : IDENT ('=' expr | ) ;
 
-expr: SUM_OP expr # unarySumOp
+expr: IDENT '(' (expr (',' expr)*)? ')' # call
+    | SUM_OP expr # unarySumOp
     | UNARY_OP expr # unaryOp
     | expr PRODUCT_OP expr # productOp
     | expr SUM_OP expr # sumOp
