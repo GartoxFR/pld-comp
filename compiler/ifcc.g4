@@ -25,6 +25,8 @@ expr: IDENT '(' (expr (',' expr)*)? ')' # call
     | expr SUM_OP expr # sumOp
     | expr CMP_OP expr # cmpOp
     | expr EQ_OP expr # eqOp
+    | expr LOGICAL_AND expr # logicalAnd
+    | expr LOGICAL_OR expr # logicalOr
     | IDENT '=' expr # assign
     | CONST # const
     | IDENT # var 
@@ -45,6 +47,8 @@ UNARY_OP : '!' ;
 PRODUCT_OP : '*' ;
 CMP_OP : '>' | '<' | '>=' | '<=' ;
 EQ_OP : '==' | '!=' ;
+LOGICAL_AND : '&&' ;
+LOGICAL_OR : '||' ;
 CONST : [0-9]+ ;
 IDENT : [a-zA-Z][a-zA-Z0-9]* ;
 COMMENT : '/*' .*? '*/' -> skip ;

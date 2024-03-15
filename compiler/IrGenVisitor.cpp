@@ -246,3 +246,43 @@ std::any IrGenVisitor::visitCall(ifccParser::CallContext *ctx) {
 
     return res;
 }
+
+std::any IrGenVisitor::visitLogicalOr(ifccParser::LogicalOrContext *ctx) {
+    Local res = std::any_cast<Local>(visit(ctx->expr(0)));
+
+    BasicBlock* orBlock = m_currentFunction->newBlock();
+    BasicBlock* endBlock = m_currentFunction->newBlock();
+
+    endBlock->terminate<ConditionalJump>(res, endBlock, orBlock);
+    m_currentBlock->terminator().swap(endBlock->terminator());
+
+    orBlock->terminate<BasicJump>(endBlock);
+
+    m_currentBlock = orBlock;
+    Local orRes = std::any_cast<Local>(visit(ctx->expr(1)));
+    m_currentBlock->emit<Assignment>(res, orRes);
+
+    m_currentBlock = endBlock;
+
+    return res;
+}
+
+std::any IrGenVisitor::visitLogicalAnd(ifccParser::LogicalAndContext *ctx) {
+    Local res = std::any_cast<Local>(visit(ctx->expr(0)));
+
+    BasicBlock* andBlock = m_currentFunction->newBlock();
+    BasicBlock* endBlock = m_currentFunction->newBlock();
+
+    endBlock->terminate<ConditionalJump>(res, andBlock, endBlock);
+    m_currentBlock->terminator().swap(endBlock->terminator());
+
+    andBlock->terminate<BasicJump>(endBlock);
+
+    m_currentBlock = andBlock;
+    Local orRes = std::any_cast<Local>(visit(ctx->expr(1)));
+    m_currentBlock->emit<Assignment>(res, orRes);
+
+    m_currentBlock = endBlock;
+
+    return res;
+}
