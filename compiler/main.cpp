@@ -47,37 +47,32 @@ int main(int argn, const char** argv) {
         exit(1);
     }
 
-    // Just print ir
-    if (argn >= 3 && strcmp(argv[2], "-ir") == 0) {
-        IrGenVisitor visitor;
-        visitor.visit(tree);
+    IrGenVisitor visitor;
+    visitor.visit(tree);
 
-        if (visitor.hasErrors()) {
+    if (visitor.hasErrors()) {
 
-            cerr << "Des erreurs sont survenus. Abandon." << endl;
-            return 1;
-        }
+        cerr << "Des erreurs sont survenus. Abandon." << endl;
+        return 1;
+    }
 
-        IrPrintVisitor printer(cerr);
-        for (auto& function : visitor.functions()) {
-            printer.visit(*function);
-        }
+    IrPrintVisitor printer(cerr);
+    for (auto& function : visitor.functions()) {
+        printer.visit(*function);
+    }
 
-        cerr << endl << endl;
+    cerr << endl << endl;
 
-        ofstream file("graph.dot");
+    ofstream file("graph.dot");
 
-        IrGraphVisitor cfg(file);
-        for (auto& function : visitor.functions()) {
-            cfg.visit(*function);
-        }
+    IrGraphVisitor cfg(file);
+    for (auto& function : visitor.functions()) {
+        cfg.visit(*function);
+    }
 
-        X86GenVisitor gen(cout);
-        for (auto& function : visitor.functions()) {
-            gen.visit(*function);
-        }
-
-        return 0;
+    X86GenVisitor gen(cout);
+    for (auto& function : visitor.functions()) {
+        gen.visit(*function);
     }
 
     return 0;
