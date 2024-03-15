@@ -7,5 +7,5 @@ int main() {
         if (y) z = 6;
         else z = 10;
 
-    return x + y;
+    return x + z;
 }

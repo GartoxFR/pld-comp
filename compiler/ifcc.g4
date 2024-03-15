@@ -5,9 +5,11 @@ axiom : prog EOF ;
 prog : 'int' 'main' '(' ')' '{' stmt* return_stmt '}' ;
 
 
-stmt : expr ';' | declare_stmt | block | if;
+stmt : expr ';' | declare_stmt | block | if | while;
 
 if: IF '(' expr ')' then=stmt ( ELSE else=stmt )? ;
+
+while: WHILE '(' expr ')' stmt ;
 
 block : '{' stmt* '}' ;
 
@@ -30,6 +32,7 @@ return_stmt: RETURN expr ';' ;
 RETURN : 'return' ;
 INT : 'int' ;
 IF : 'if' ;
+WHILE : 'while' ;
 ELSE : 'else' ;
 
 SUM_OP : '+' | '-' ;
