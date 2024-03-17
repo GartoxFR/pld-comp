@@ -19,5 +19,11 @@ ifcc-test-output
 *.png
 *.svg
 
+# Dot
+*.dot
+
+# C Files at the root (often temporary C files to test the compiler)
+/*.c
+
 # ANTLR
 antlr/

@@ -57,21 +57,13 @@ int main(int argn, const char** argv) {
     }
 
     IrPrintVisitor printer(cerr);
-    for (auto& function : visitor.functions()) {
-        printer.visit(*function);
-    }
-
-    cerr << endl << endl;
-
-    ofstream file("graph.dot");
-
-    IrGraphVisitor cfg(file);
-    for (auto& function : visitor.functions()) {
-        cfg.visit(*function);
-    }
-
     X86GenVisitor gen(cout);
     for (auto& function : visitor.functions()) {
+        ofstream file(function->name() + ".dot");
+        IrGraphVisitor cfg(file);
+
+        printer.visit(*function);
+        cfg.visit(*function);
         gen.visit(*function);
     }
 
