@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <variant>
 
+#include "ConstantFolding.h"
 #include "DeadCodeElimination.h"
 #include "IrGenVisitor.h"
 #include "IrPrintVisitor.h"
@@ -68,10 +69,12 @@ int main(int argn, const char** argv) {
         do {
             IrValuePropagationVisitor propagator;
             DeadCodeElimination deadCodeElimination;
+            ConstantFoldingVisitor folding;
             propagator.visit(*function);
             deadCodeElimination.visit(*function);
+            folding.visit(*function);
 
-            changed = propagator.changed() || deadCodeElimination.changed();
+            changed = propagator.changed() || deadCodeElimination.changed() || folding.changed();
         } while(changed);
         printer.visit(*function);
         cfg.visit(*function);

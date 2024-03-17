@@ -27,6 +27,7 @@ OBJECTS=build/ifccBaseVisitor.o \
 	build/X86GenVisitor.o \
 	build/IrValuePropagationVisitor.o \
 	build/DeadCodeElimination.o \
+	build/ConstantFolding.o \
 	build/ir/Terminators.o
 
 ifcc: $(OBJECTS)
