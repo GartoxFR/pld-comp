@@ -30,7 +30,7 @@ class IrValuePropagationVisitor : public ir::Visitor {
     }
 
     void setSubstitution(ir::Local local, ir::RValue rvalue) {
-        m_knownValues.insert({std::move(local), std::move(rvalue)}).first->second = rvalue;
+        m_knownValues.insert_or_assign(std::move(local), std::move(rvalue));
     }
 
     bool changed() const {
