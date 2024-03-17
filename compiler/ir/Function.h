@@ -59,6 +59,7 @@ namespace ir {
         size_t argCount() const { return m_argCount; }
 
         const auto& blocks() const { return m_blocks; }
+        auto& blocks() { return m_blocks; }
         
         const auto& locals() const { return m_locals; }
 

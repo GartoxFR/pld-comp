@@ -28,6 +28,8 @@ OBJECTS=build/ifccBaseVisitor.o \
 	build/IrValuePropagationVisitor.o \
 	build/DeadCodeElimination.o \
 	build/ConstantFolding.o \
+	build/EmptyBlockElimination.o \
+	build/BlockReordering.o \
 	build/ir/Terminators.o
 
 ifcc: $(OBJECTS)

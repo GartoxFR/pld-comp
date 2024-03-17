@@ -5,8 +5,10 @@
 #include <cstdlib>
 #include <variant>
 
+#include "BlockReordering.h"
 #include "ConstantFolding.h"
 #include "DeadCodeElimination.h"
+#include "EmptyBlockElimination.h"
 #include "IrGenVisitor.h"
 #include "IrPrintVisitor.h"
 #include "IrGraphVisitor.h"
@@ -59,7 +61,6 @@ int main(int argn, const char** argv) {
         return 1;
     }
 
-
     IrPrintVisitor printer(cerr);
     X86GenVisitor gen(cout);
     for (auto& function : visitor.functions()) {
@@ -70,12 +71,18 @@ int main(int argn, const char** argv) {
             IrValuePropagationVisitor propagator;
             DeadCodeElimination deadCodeElimination;
             ConstantFoldingVisitor folding;
+            EmptyBlockEliminationVisitor emptyBlockElimination;
+            BlockReorderingVisitor blockReordering;
+
             propagator.visit(*function);
             deadCodeElimination.visit(*function);
             folding.visit(*function);
+            emptyBlockElimination.visit(*function);
+            blockReordering.visit(*function);
 
-            changed = propagator.changed() || deadCodeElimination.changed() || folding.changed();
-        } while(changed);
+            changed = propagator.changed() || deadCodeElimination.changed() || folding.changed() ||
+                emptyBlockElimination.changed() || blockReordering.changed();
+        } while (changed);
         printer.visit(*function);
         cfg.visit(*function);
         gen.visit(*function);

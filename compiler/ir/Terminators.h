@@ -38,6 +38,8 @@ namespace ir {
 
         BasicBlock* target() { return m_target; }
 
+        void setTarget(BasicBlock* target) { m_target = target; }
+
       private:
         BasicBlock* m_target;
     };
@@ -57,6 +59,10 @@ namespace ir {
         BasicBlock* trueTarget() { return m_trueTarget; }
 
         BasicBlock* falseTarget() { return m_falseTarget; }
+
+        void setTrueTarget(BasicBlock* target) { m_trueTarget = target; }
+
+        void setFalseTarget(BasicBlock* target) { m_falseTarget = target; }
 
         const RValue& condition() const { return m_condition; }
         RValue& condition() { return m_condition; }

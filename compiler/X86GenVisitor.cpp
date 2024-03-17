@@ -164,6 +164,6 @@ void X86GenVisitor::visit(ir::Call& call) {
         }
     }
 
-    m_out << "    call   " << call.name() << "\n";
+    m_out << "    call    " << call.name() << "\n";
     saveEax(call.destination());
 }
