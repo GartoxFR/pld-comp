@@ -7,6 +7,19 @@
 └── tests    -> Tests
 ```
 
+# Build requirements
+
+- gcc 11.4 or higher
+- antlr4.13.1 (install with ./install-antlr.sh)
+
+If you installed antlr with the script, you can then use the following config.mk
+```Makefile
+ANTLRJAR=../antlr/jar/antlr-4.13.1-complete.jar
+ANTLRINC=../antlr/include
+ANTLRLIB=../antlr/lib/libantlr4-runtime.a
+ANTLR=java -jar $(ANTLRJAR)
+```
+
 # Using the root Makefile
 
 There is a Makefile at the root of the project to execute common task faster :

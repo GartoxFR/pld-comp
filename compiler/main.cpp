@@ -58,12 +58,12 @@ int main(int argn, const char** argv) {
         return 1;
     }
 
-    ofstream file("graph.dot");
 
     IrPrintVisitor printer(cerr);
-    IrGraphVisitor cfg(file);
     X86GenVisitor gen(cout);
     for (auto& function : visitor.functions()) {
+        ofstream file(function->name() + ".dot");
+        IrGraphVisitor cfg(file);
         bool changed;
         do {
             IrValuePropagationVisitor propagator;
