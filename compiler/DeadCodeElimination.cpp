@@ -3,6 +3,7 @@
 #include <ranges>
 
 using namespace ir;
+
 class TerminatorVisitor : public Visitor {
   public:
     TerminatorVisitor(BasicBlock* source, std::unordered_map<BasicBlock*, std::vector<BasicBlock*>>& m_dependanceMap) :

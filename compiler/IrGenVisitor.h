@@ -10,6 +10,8 @@ class IrGenVisitor : public ifccBaseVisitor {
   public:
     std::any visitFunction(ifccParser::FunctionContext *ctx) override;
     std::any visitReturn_stmt(ifccParser::Return_stmtContext* ctx) override;
+    std::any visitBreak(ifccParser::BreakContext *ctx) override;
+    std::any visitContinue(ifccParser::ContinueContext *ctx) override;
 
     std::any visitConst(ifccParser::ConstContext* ctx) override;
     std::any visitVar(ifccParser::VarContext* ctx) override;
@@ -39,11 +41,13 @@ class IrGenVisitor : public ifccBaseVisitor {
 
     const auto& functions() const { return m_functions; }
 
-    bool hasErrors() const { return m_symbolTable.hasErrors(); }
+    bool hasErrors() const { return m_symbolTable.hasErrors() || error; }
 
   private:
     std::vector<std::unique_ptr<ir::Function>> m_functions;
     ir::Function* m_currentFunction;
     ir::BasicBlock* m_currentBlock;
     IrSymbolTable m_symbolTable;
+    std::vector<std::pair<ir::BasicBlock*, ir::BasicBlock*>> m_breakableScopes; // (breakBlock, continueBlock)
+    bool error = false;
 };

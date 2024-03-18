@@ -39,6 +39,8 @@ namespace ir {
 
         bool operator==(const Local& other) const { return m_id == other.m_id; }
 
+        std::strong_ordering operator<=>(const Local& other) const { return m_id <=> other.m_id; }
+
         friend inline std::ostream& operator<<(std::ostream& out, const Local& self) { return out << "_" << self.id(); }
 
       private:
@@ -111,6 +113,7 @@ namespace ir {
         void accept(Visitor& visitor) override;
 
         const Local& destination() const { return m_destination; }
+        Local& destination() { return m_destination; }
         const RValue& left() const { return m_left; }
         RValue& left() { return m_left; }
         const RValue& right() const { return m_right; }
@@ -148,6 +151,7 @@ namespace ir {
         void accept(Visitor& visitor) override;
 
         const Local& destination() const { return m_destination; }
+        Local& destination() { return m_destination; }
         const RValue& operand() const { return m_operand; }
         RValue& operand() { return m_operand; }
         UnaryOpKind operation() const { return m_operation; }
@@ -167,6 +171,7 @@ namespace ir {
         void print(std::ostream& out) const override { out << m_destination << " := " << m_source; }
 
         const Local& destination() const { return m_destination; }
+        Local& destination() { return m_destination; }
 
         const RValue& source() const { return m_source; }
         RValue& source() { return m_source; }
@@ -195,6 +200,7 @@ namespace ir {
         }
 
         const Local& destination() const { return m_destination; }
+        Local& destination() { return m_destination; }
 
         const auto& name() const { return m_name; }
 

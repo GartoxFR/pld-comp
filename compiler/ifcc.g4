@@ -6,13 +6,16 @@ function : INT IDENT '(' (functionArg (',' functionArg)*)? ')' block;
 
 functionArg : INT IDENT ;
 
-stmt : expr ';' | declare_stmt | block | if | while | return_stmt;
+stmt : expr ';' | declare_stmt | block | if | while | return_stmt | break | continue ;
 
 if: IF '(' expr ')' then=stmt ( ELSE else=stmt )? ;
 
 while: WHILE '(' expr ')' stmt ;
 
 block : '{' stmt* '}' ;
+
+break : BREAK ';' ;
+continue : CONTINUE ';' ;
 
 declare_stmt : INT idents+=initializer (',' idents+=initializer)* ';' ;
 
@@ -41,6 +44,8 @@ INT : 'int' ;
 IF : 'if' ;
 WHILE : 'while' ;
 ELSE : 'else' ;
+BREAK : 'break' ;
+CONTINUE : 'continue' ;
 
 SUM_OP : '+' | '-' ;
 UNARY_OP : '!' ;

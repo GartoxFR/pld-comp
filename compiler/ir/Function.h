@@ -11,7 +11,7 @@ namespace ir {
     class LocalInfo {
       public:
         LocalInfo() = default;
-        explicit LocalInfo(const std::string& m_name) : m_name(m_name) {}
+        explicit LocalInfo(std::string m_name) : m_name(std::move(m_name)) {}
 
         const std::optional<std::string>& name() const { return m_name; }
 
@@ -62,6 +62,7 @@ namespace ir {
         auto& blocks() { return m_blocks; }
         
         const auto& locals() const { return m_locals; }
+        auto& locals() { return m_locals; }
 
         void printLocalMapping(std::ostream& out) const {
             out << "debug " << m_name << " {" << std::endl;

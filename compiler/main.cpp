@@ -13,6 +13,7 @@
 #include "IrPrintVisitor.h"
 #include "IrGraphVisitor.h"
 #include "IrValuePropagationVisitor.h"
+#include "LocalRenaming.h"
 #include "X86GenVisitor.h"
 #include "antlr4-runtime.h"
 #include "generated/ifccLexer.h"
@@ -83,6 +84,10 @@ int main(int argn, const char** argv) {
             changed = propagator.changed() || deadCodeElimination.changed() || folding.changed() ||
                 emptyBlockElimination.changed() || blockReordering.changed();
         } while (changed);
+
+        LocalRenamingVisitor localRenaming;
+        localRenaming.visit(*function);
+
         printer.visit(*function);
         cfg.visit(*function);
         gen.visit(*function);

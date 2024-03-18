@@ -49,6 +49,41 @@ std::any IrGenVisitor::visitReturn_stmt(ifccParser::Return_stmtContext* ctx) {
 
     return 0;
 }
+std::any IrGenVisitor::visitBreak(ifccParser::BreakContext *ctx) {
+    if (m_breakableScopes.empty()) {
+        error = true;
+        std::cerr << "Error: Break not in a loop";
+        return 0;
+    }
+
+    BasicBlock* endBlock = m_breakableScopes.back().first;
+    m_currentBlock->terminate<BasicJump>(endBlock);
+
+    BasicBlock* unreachableBlock = m_currentFunction->newBlock();
+    unreachableBlock->terminate<BasicJump>(m_currentFunction->epilogue());
+
+    m_currentBlock = unreachableBlock;
+
+    return 0;
+}
+
+std::any IrGenVisitor::visitContinue(ifccParser::ContinueContext *ctx) {
+    if (m_breakableScopes.empty()) {
+        error = true;
+        std::cerr << "Error: Continue not in a loop";
+        return 0;
+    }
+
+    BasicBlock* testBlock = m_breakableScopes.back().second;
+    m_currentBlock->terminate<BasicJump>(testBlock);
+
+    BasicBlock* unreachableBlock = m_currentFunction->newBlock();
+    unreachableBlock->terminate<BasicJump>(m_currentFunction->epilogue());
+
+    m_currentBlock = unreachableBlock;
+
+    return 0;
+}
 
 std::any IrGenVisitor::visitConst(ifccParser::ConstContext* ctx) {
     int value = std::stoi(ctx->CONST()->getText());
@@ -116,8 +151,10 @@ std::any IrGenVisitor::visitWhile(ifccParser::WhileContext *ctx) {
     bodyBlock->terminate<BasicJump>(testBlock);
 
     m_currentBlock = bodyBlock;
+    m_breakableScopes.push_back({endBlock, testBlock});
     visit(ctx->stmt());
 
+    m_breakableScopes.pop_back();
     m_currentBlock = endBlock;
     
     return 0;
