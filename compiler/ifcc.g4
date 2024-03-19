@@ -32,6 +32,7 @@ expr: IDENT '(' (expr (',' expr)*)? ')' # call
     | expr LOGICAL_OR expr # logicalOr
     | IDENT '=' expr # assign
     | CONST # const
+    | CHAR  # charLiteral
     | IDENT # var 
     | '(' expr ')' # par
     ;
@@ -54,6 +55,7 @@ CMP_OP : '>' | '<' | '>=' | '<=' ;
 EQ_OP : '==' | '!=' ;
 LOGICAL_AND : '&&' ;
 LOGICAL_OR : '||' ;
+CHAR : '\'' + (~[\\'] | ('\\' + ('n' | 't' | 'r' | '0' | '\'' | '\\'))) + '\'' ;
 CONST : [0-9]+ ;
 IDENT : [a-zA-Z][a-zA-Z0-9]* ;
 COMMENT : '/*' .*? '*/' -> skip ;

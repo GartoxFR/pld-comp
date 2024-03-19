@@ -1,5 +1,6 @@
 #include "DeadCodeElimination.h"
 #include <algorithm>
+#include <iterator>
 #include <ranges>
 
 using namespace ir;
@@ -29,7 +30,14 @@ void BlockLivenessAnalysis::visit(ir::Function& function) {
         }
     }
 
-    std::vector<BasicBlock*> toVisit = {function.epilogue()};
+    std::vector<BasicBlock*> toVisit;
+    // Push all block to be sure they are all visited at least once
+    toVisit.push_back(function.prologue());
+    std::transform(
+        std::begin(function.blocks()), std::end(function.blocks()), std::back_inserter(toVisit),
+        [](auto& block) { return block.get(); }
+    );
+    toVisit.push_back(function.epilogue());
     m_liveMap[function.epilogue()].second = {Local{0}};
     while (!toVisit.empty()) {
         BasicBlock* current = toVisit.back();
@@ -72,9 +80,7 @@ void BlockLivenessAnalysis::visit(ir::Assignment& assignment) {
     unsetLive(assignment.destination());
 }
 
-void BlockLivenessAnalysis::visit(ir::ConditionalJump& jump) {
-    setLive(jump.condition());
-}
+void BlockLivenessAnalysis::visit(ir::ConditionalJump& jump) { setLive(jump.condition()); }
 void BlockLivenessAnalysis::visit(ir::Call& call) {
     for (auto& arg : call.args()) {
         setLive(arg);
@@ -134,9 +140,7 @@ void DeadCodeElimination::visit(ir::Assignment& assignment) {
     unsetLive(assignment.destination());
 }
 
-void DeadCodeElimination::visit(ir::ConditionalJump& jump) {
-    setLive(jump.condition());
-}
+void DeadCodeElimination::visit(ir::ConditionalJump& jump) { setLive(jump.condition()); }
 void DeadCodeElimination::visit(ir::Call& call) {
     for (auto& arg : call.args()) {
         setLive(arg);

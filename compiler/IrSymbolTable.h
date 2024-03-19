@@ -43,7 +43,7 @@ class IrSymbolTable {
         return ir::Local{INT32_MAX};
     }
 
-    void declareFunction(ir::Function& function) {
+    void declareFunction(const ir::Function& function) {
 
         if (m_functions.contains(function.name())) {
             m_error = true;
@@ -73,6 +73,6 @@ class IrSymbolTable {
     using VariableScope = std::unordered_map<std::string, ir::Local>;
 
     std::vector<VariableScope> m_localScopeStack;
-    std::unordered_map<std::string, ir::Function*> m_functions;
+    std::unordered_map<std::string, const ir::Function*> m_functions;
     bool m_error = false;
 };

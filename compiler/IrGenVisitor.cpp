@@ -4,6 +4,14 @@
 
 using namespace ir;
 
+const Function PUTCHAR("putchar", 1);
+const Function GETCHAR("getchar", 0);
+
+IrGenVisitor::IrGenVisitor() {
+    m_symbolTable.declareFunction(PUTCHAR);
+    m_symbolTable.declareFunction(GETCHAR);
+}
+
 std::any IrGenVisitor::visitFunction(ifccParser::FunctionContext *ctx)  {
     m_symbolTable.enterNewLocalScope();
 
@@ -87,6 +95,30 @@ std::any IrGenVisitor::visitContinue(ifccParser::ContinueContext *ctx) {
 
 std::any IrGenVisitor::visitConst(ifccParser::ConstContext* ctx) {
     int value = std::stoi(ctx->CONST()->getText());
+    Local res = m_currentFunction->newLocal();
+    m_currentBlock->emit<Assignment>(res, Immediate(value));
+    return res;
+}
+
+std::any IrGenVisitor::visitCharLiteral(ifccParser::CharLiteralContext *ctx) {
+    auto text = ctx->CHAR()->getText();
+    int value;
+    if (text[1] != '\\') {
+        value = ctx->CHAR()->getText()[1];
+    } else {
+        switch (text[2]) {
+            case 'n': value = '\n'; break;
+            case 'r': value = '\r'; break;
+            case 't': value = '\t'; break;
+            case '\'': value = '\''; break;
+            case '\\': value = '\\'; break;
+            case '0': value = '\0'; break;
+
+            // Default value should never reached due to grammar
+            default: value = 42; break;
+        }
+    }
+
     Local res = m_currentFunction->newLocal();
     m_currentBlock->emit<Assignment>(res, Immediate(value));
     return res;

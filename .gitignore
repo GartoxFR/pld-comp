@@ -22,8 +22,10 @@ ifcc-test-output
 # Dot
 *.dot
 
-# C Files at the root (often temporary C files to test the compiler)
+# C, s and out Files at the root (often temporary files to test the compiler)
 /*.c
+/*.s
+/*.out
 
 # ANTLR
 antlr/
