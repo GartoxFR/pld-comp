@@ -101,6 +101,31 @@ void X86GenVisitor::emitCmp(std::string_view instruction, const ir::BinaryOp& bi
     m_out << "    movl    $0, %eax\n";
     m_out << "    " << instruction << " %edx, %eax\n";
     saveEax(binaryOp.destination());
+    if (std::holds_alternative<Local>(binaryOp.right())) {
+        Local rightLocal = std::get<Local>(binaryOp.right());
+        m_out << "    cmpl    " << variableLocation(rightLocal) << ", %eax\n";
+    } else {
+        Immediate rightImmediate = std::get<Immediate>(binaryOp.right());
+        m_out << "    cmpl    $" << rightImmediate.value() << ", %eax\n";
+    }
+}
+void X86GenVisitor::emitDiv(bool modulo, const ir::BinaryOp& binaryOp) {
+    loadEax(binaryOp.left());
+    m_out << "    cltd\n";
+    if (std::holds_alternative<Local>(binaryOp.right())) {
+        Local rightLocal = std::get<Local>(binaryOp.right());
+        m_out << "    idivl   " << variableLocation(rightLocal) << "\n";
+    } else {
+        Immediate rightImmediate = std::get<Immediate>(binaryOp.right());
+        m_out << "    movl    $" << rightImmediate.value() << ", %ebx\n";
+        m_out << "    idivl   %ebx\n";
+    }
+
+    if (modulo) {
+        m_out << "    movl    %edx, " << variableLocation(binaryOp.destination()) << "\n";
+    } else {
+        saveEax(binaryOp.destination());
+    }
 }
 
 void X86GenVisitor::visit(ir::BinaryOp& binaryOp) {
@@ -108,7 +133,8 @@ void X86GenVisitor::visit(ir::BinaryOp& binaryOp) {
         case BinaryOpKind::ADD: emitSimpleArithmetic("addl", binaryOp); break;
         case BinaryOpKind::SUB: emitSimpleArithmetic("subl", binaryOp); break;
         case BinaryOpKind::MUL: emitSimpleArithmetic("imull", binaryOp); break;
-        case BinaryOpKind::DIV: break;
+        case BinaryOpKind::DIV: emitDiv(false, binaryOp); break;
+        case BinaryOpKind::MOD: emitDiv(true, binaryOp); break;
         case BinaryOpKind::EQ: emitCmp("cmovel ", binaryOp); break;
         case BinaryOpKind::NEQ: emitCmp("cmovnel ", binaryOp); break;
         case BinaryOpKind::CMP_L: emitCmp("cmovll ", binaryOp); break;

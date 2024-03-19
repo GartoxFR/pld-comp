@@ -21,6 +21,7 @@ class X86GenVisitor : public ir::Visitor {
     void emitEq(const ir::BinaryOp& binaryOp);
     void emitNeq(const ir::BinaryOp& binaryOp);
     void emitCmp(std::string_view instruction, const ir::BinaryOp& binaryOp);
+    void emitDiv(bool modulo, const ir::BinaryOp& binaryOp);
 
   private:
     std::ostream& m_out;

@@ -74,6 +74,7 @@ namespace ir {
         SUB,
         MUL,
         DIV,
+        MOD,
         EQ,
         NEQ,
         CMP_L,
@@ -88,6 +89,7 @@ namespace ir {
             case BinaryOpKind::SUB: return out << "-";
             case BinaryOpKind::MUL: return out << "*";
             case BinaryOpKind::DIV: return out << "/";
+            case BinaryOpKind::MOD: return out << "%";
             case BinaryOpKind::EQ: return out << "==";
             case BinaryOpKind::NEQ: return out << "!=";
             case BinaryOpKind::CMP_L: return out << "<";

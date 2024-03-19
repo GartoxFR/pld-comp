@@ -195,10 +195,12 @@ std::any IrGenVisitor::visitSumOp(ifccParser::SumOpContext* ctx) {
 }
 std::any IrGenVisitor::visitProductOp(ifccParser::ProductOpContext* ctx) {
     BinaryOpKind op;
-    if (ctx->PRODUCT_OP()->getText() == "*") {
-        op = BinaryOpKind::MUL;
-    } else {
-        op = BinaryOpKind::DIV;
+
+    switch (ctx->PRODUCT_OP()->getText()[0]) {
+        case '*': op = BinaryOpKind::MUL; break;
+        case '/': op = BinaryOpKind::DIV; break;
+        case '%': op = BinaryOpKind::MOD; break;
+        default: return 0;
     }
 
     return visitBinaryOp(ctx->expr(0), ctx->expr(1), op);

@@ -30,6 +30,7 @@ void ConstantFoldingVisitor::visit(ir::BinaryOp& binaryOp) {
         case BinaryOpKind::SUB: folded = Immediate(left.value() - right.value()); break;
         case BinaryOpKind::MUL: folded = Immediate(left.value() * right.value()); break;
         case BinaryOpKind::DIV: folded = Immediate(left.value() / right.value()); break;
+        case BinaryOpKind::MOD: folded = Immediate(left.value() % right.value()); break;
         case BinaryOpKind::EQ: folded = Immediate(left.value() == right.value()); break;
         case BinaryOpKind::NEQ: folded = Immediate(left.value() != right.value()); break;
         case BinaryOpKind::CMP_L: folded = Immediate(left.value() < right.value()); break;

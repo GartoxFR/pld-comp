@@ -49,7 +49,7 @@ CONTINUE : 'continue' ;
 
 SUM_OP : '+' | '-' ;
 UNARY_OP : '!' ;
-PRODUCT_OP : '*' ;
+PRODUCT_OP : '*' | '/' | '%';
 CMP_OP : '>' | '<' | '>=' | '<=' ;
 EQ_OP : '==' | '!=' ;
 LOGICAL_AND : '&&' ;
