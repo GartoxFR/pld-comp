@@ -1,5 +1,6 @@
 #include "DeadCodeElimination.h"
 #include <algorithm>
+#include <iostream>
 #include <iterator>
 #include <ranges>
 

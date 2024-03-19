@@ -37,7 +37,7 @@ expr: IDENT '(' (expr (',' expr)*)? ')' # call
     | '(' expr ')' # par
     ;
 
-return_stmt: RETURN expr ';' ;
+return_stmt: RETURN expr? ';' ;
 
 
 RETURN : 'return' ;

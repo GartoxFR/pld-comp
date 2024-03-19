@@ -54,6 +54,10 @@ namespace ir {
 
         int32_t value() const { return m_value; }
 
+        bool operator==(const Immediate& immediate) const {
+            return immediate.m_value == m_value;
+        }
+
         friend inline std::ostream& operator<<(std::ostream& out, const Immediate& self) { return out << self.value(); }
 
       private:

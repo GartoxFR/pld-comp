@@ -86,7 +86,7 @@ int main(int argn, const char** argv) {
         } while (changed);
 
         LocalRenamingVisitor localRenaming;
-        // localRenaming.visit(*function);
+        localRenaming.visit(*function);
 
         printer.visit(*function);
         cfg.visit(*function);

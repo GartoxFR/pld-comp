@@ -42,10 +42,12 @@ std::any IrGenVisitor::visitFunction(ifccParser::FunctionContext *ctx)  {
 }
 
 std::any IrGenVisitor::visitReturn_stmt(ifccParser::Return_stmtContext* ctx) {
-    Local res = std::any_cast<Local>(visit(ctx->expr()));
-    Local returnLocal = m_currentFunction->returnLocal();
+    if (ctx->expr()) {
+        Local res = std::any_cast<Local>(visit(ctx->expr()));
+        Local returnLocal = m_currentFunction->returnLocal();
 
-    m_currentBlock->emit<Assignment>(returnLocal, res);
+        m_currentBlock->emit<Assignment>(returnLocal, res);
+    }
 
     m_currentBlock->terminate<BasicJump>(m_currentFunction->epilogue());
 
