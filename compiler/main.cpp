@@ -17,6 +17,7 @@
 #include "IrValuePropagationVisitor.h"
 #include "BlockDependance.h"
 #include "LocalRenaming.h"
+#include "TwoStepAssignmentElimination.h"
 #include "X86GenVisitor.h"
 #include "antlr4-runtime.h"
 #include "generated/ifccLexer.h"
@@ -84,8 +85,13 @@ int main(int argn, const char** argv) {
             ConstantFoldingVisitor folding;
             folding.visit(*function);
 
+            livenessAnalysis = computeBlockLivenessAnalysis(*function, dependanceMap);
+            TwoStepAssignmentEliminationVisitor elimination{livenessAnalysis};
+            elimination.visit(*function);
+
             // Recompute dependance map as it may have changed
             dependanceMap = computeDependanceMap(*function);
+
             EmptyBlockEliminationVisitor emptyBlockElimination{dependanceMap};
             emptyBlockElimination.visit(*function);
 
@@ -93,7 +99,7 @@ int main(int argn, const char** argv) {
             blockReordering.visit(*function);
 
             changed = propagator.changed() || deadCodeElimination.changed() || folding.changed() ||
-                emptyBlockElimination.changed() || blockReordering.changed();
+                emptyBlockElimination.changed() || blockReordering.changed() || elimination.changed();
         } while (changed);
 
         LocalRenamingVisitor localRenaming;

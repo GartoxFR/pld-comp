@@ -42,17 +42,17 @@ void BlockLivenessAnalysisVisitor::visit(ir::BasicBlock& block) {
 }
 
 void BlockLivenessAnalysisVisitor::visit(ir::BinaryOp& binaryOp) {
+    unsetLive(binaryOp.destination());
     setLive(binaryOp.left());
     setLive(binaryOp.right());
-    unsetLive(binaryOp.destination());
 }
 void BlockLivenessAnalysisVisitor::visit(ir::UnaryOp& unaryOp) {
-    setLive(unaryOp.operand());
     unsetLive(unaryOp.destination());
+    setLive(unaryOp.operand());
 }
 void BlockLivenessAnalysisVisitor::visit(ir::Assignment& assignment) {
-    setLive(assignment.source());
     unsetLive(assignment.destination());
+    setLive(assignment.source());
 }
 
 void BlockLivenessAnalysisVisitor::visit(ir::ConditionalJump& jump) { setLive(jump.condition()); }

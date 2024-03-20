@@ -33,24 +33,24 @@ void DeadCodeElimination::visit(ir::BinaryOp& binaryOp) {
         return;
     }
 
+    unsetLive(binaryOp.destination());
     setLive(binaryOp.left());
     setLive(binaryOp.right());
-    unsetLive(binaryOp.destination());
 }
 void DeadCodeElimination::visit(ir::UnaryOp& unaryOp) {
     if (tryDrop(unaryOp.destination())) {
         return;
     }
-    setLive(unaryOp.operand());
     unsetLive(unaryOp.destination());
+    setLive(unaryOp.operand());
 }
 void DeadCodeElimination::visit(ir::Assignment& assignment) {
     if (tryDrop(assignment.destination())) {
         return;
     }
 
-    setLive(assignment.source());
     unsetLive(assignment.destination());
+    setLive(assignment.source());
 }
 
 void DeadCodeElimination::visit(ir::ConditionalJump& jump) { setLive(jump.condition()); }
