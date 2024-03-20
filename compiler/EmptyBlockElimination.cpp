@@ -22,31 +22,35 @@ void EmptyBlockEliminationVisitor::visit(BasicJump& jump) {
 
     BasicBlock* target = jump.target();
     if (target->terminator()) {
-        BasicJump* nextJump = dynamic_cast<BasicJump*>(target->terminator().get());
-        if (nextJump) {
-            if (target->instructions().empty()) {
-                jump.setTarget(nextJump->target());
-                setNeedSkip(target);
-            } else if (m_dependanceMap.at(target).size() <= 1) {
-                // We are the only block referencing this block so we can merge them
-                auto& instr = m_currentBlock->instructions();
-                auto& oldInstr = target->instructions();
-                std::move(std::begin(oldInstr), std::end(oldInstr), std::back_inserter(instr));
-                oldInstr.clear();
-                jump.setTarget(nextJump->target());
-                setNeedSkip(target);
+        if (target->instructions().empty() && m_dependanceMap[target].size() == 1) {
+            m_currentBlock->terminate(std::move(target->terminator()));
+            target->terminate<BasicJump>(target);
+        } else {
+            BasicJump* nextJump = dynamic_cast<BasicJump*>(target->terminator().get());
+            if (nextJump) {
+                if (target->instructions().empty()) {
+                    jump.setTarget(nextJump->target());
+                    setNeedSkip(target);
+                    m_changed = true;
+                } else if (m_dependanceMap.at(target).size() <= 1) {
+                    // We are the only block referencing this block so we can merge them
+                    auto& instr = m_currentBlock->instructions();
+                    auto& oldInstr = target->instructions();
+                    std::move(std::begin(oldInstr), std::end(oldInstr), std::back_inserter(instr));
+                    oldInstr.clear();
+                    jump.setTarget(nextJump->target());
+                    setNeedSkip(target);
+                    m_changed = true;
+                }
             }
         }
     }
-    if (target->instructions().empty() && target->terminator()) {}
 }
 
 void EmptyBlockEliminationVisitor::visit(ConditionalJump& jump) {
-    std::cerr << m_currentBlock->label() << " " << needSkip(m_currentBlock) << " " << m_dependanceMap[m_currentBlock].size() << std::endl;
     if (needSkip(m_currentBlock) || m_dependanceMap[m_currentBlock].empty()) {
         return;
     }
-
 
     BasicBlock* trueTarget = jump.trueTarget();
     if (trueTarget->instructions().empty() && trueTarget->terminator()) {
@@ -62,7 +66,6 @@ void EmptyBlockEliminationVisitor::visit(ConditionalJump& jump) {
                     jump.setTrueTarget(nextCondJump->trueTarget());
                     setNeedSkip(trueTarget);
                     m_changed = true;
-
                 }
             }
         }
@@ -85,6 +88,5 @@ void EmptyBlockEliminationVisitor::visit(ConditionalJump& jump) {
                 }
             }
         }
-
     }
 }

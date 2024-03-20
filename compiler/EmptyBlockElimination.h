@@ -24,6 +24,7 @@ class EmptyBlockEliminationVisitor : public ir::Visitor {
     DependanceMap& m_dependanceMap;
     std::vector<ir::BasicBlock*> m_toSkip;
 
+
     bool needSkip(ir::BasicBlock* block) {
         return std::find(std::begin(m_toSkip), std::end(m_toSkip), block) != std::end(m_toSkip);
     }
