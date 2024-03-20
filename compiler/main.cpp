@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <variant>
 
+#include "BlockDependance.h"
+#include "BlockLivenessAnalysis.h"
 #include "BlockReordering.h"
 #include "ConstantFolding.h"
 #include "DeadCodeElimination.h"
@@ -13,6 +15,7 @@
 #include "IrPrintVisitor.h"
 #include "IrGraphVisitor.h"
 #include "IrValuePropagationVisitor.h"
+#include "BlockDependance.h"
 #include "LocalRenaming.h"
 #include "X86GenVisitor.h"
 #include "antlr4-runtime.h"
@@ -70,15 +73,23 @@ int main(int argn, const char** argv) {
         bool changed;
         do {
             IrValuePropagationVisitor propagator;
-            DeadCodeElimination deadCodeElimination;
-            ConstantFoldingVisitor folding;
-            EmptyBlockEliminationVisitor emptyBlockElimination;
-            BlockReorderingVisitor blockReordering;
-
             propagator.visit(*function);
+
+            DependanceMap dependanceMap = computeDependanceMap(*function);
+            BlockLivenessAnalysis livenessAnalysis = computeBlockLivenessAnalysis(*function, dependanceMap);
+
+            DeadCodeElimination deadCodeElimination{livenessAnalysis};
             deadCodeElimination.visit(*function);
+
+            ConstantFoldingVisitor folding;
             folding.visit(*function);
+
+            // Recompute dependance map as it may have changed
+            dependanceMap = computeDependanceMap(*function);
+            EmptyBlockEliminationVisitor emptyBlockElimination{dependanceMap};
             emptyBlockElimination.visit(*function);
+
+            BlockReorderingVisitor blockReordering;
             blockReordering.visit(*function);
 
             changed = propagator.changed() || deadCodeElimination.changed() || folding.changed() ||

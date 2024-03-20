@@ -29,6 +29,7 @@ OBJECTS=build/ifccBaseVisitor.o \
 	build/DeadCodeElimination.o \
 	build/ConstantFolding.o \
 	build/EmptyBlockElimination.o \
+	build/BlockLivenessAnalysis.o \
 	build/LocalRenaming.o \
 	build/BlockReordering.o \
 	build/ir/Terminators.o

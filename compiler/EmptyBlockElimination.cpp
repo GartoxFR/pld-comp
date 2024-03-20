@@ -3,31 +3,7 @@
 
 using namespace ir;
 
-class TerminatorVisitor : public Visitor {
-  public:
-    TerminatorVisitor(BasicBlock* source, std::unordered_map<BasicBlock*, std::vector<BasicBlock*>>& m_dependanceMap) :
-        source(source), m_dependanceMap(m_dependanceMap) {}
-
-    void visit(BasicJump& jump) { m_dependanceMap[jump.target()].push_back(source); }
-
-    void visit(ConditionalJump& jump) {
-        m_dependanceMap[jump.trueTarget()].push_back(source);
-        m_dependanceMap[jump.falseTarget()].push_back(source);
-    }
-
-  private:
-    BasicBlock* source;
-    std::unordered_map<BasicBlock*, std::vector<BasicBlock*>>& m_dependanceMap;
-};
-
 void EmptyBlockEliminationVisitor::visit(ir::Function& function) {
-    m_dependanceMap.clear();
-    for (auto& block : function.blocks()) {
-        if (block->terminator()) {
-            TerminatorVisitor{block.get(), m_dependanceMap}.visitBase(*block->terminator());
-        }
-    }
-
     for (auto& block : function.blocks()) {
         visit(*block);
     }
