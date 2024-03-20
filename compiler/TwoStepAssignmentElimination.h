@@ -34,6 +34,7 @@ class TwoStepAssignmentEliminationVisitor : public ir::Visitor {
             local = it->second.first;
             *it->second.second = nullptr;
             m_potentialTarget.erase(local);
+            m_changed = true;
         }
     }
 

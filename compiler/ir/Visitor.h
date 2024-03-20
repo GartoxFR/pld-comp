@@ -14,9 +14,11 @@ namespace ir {
         }
 
         virtual void visit(Function& function) {
+            visit(*function.prologue());
             for (auto& block : function.blocks()) {
                 visitBase(*block);
             }
+            visit(*function.epilogue());
         }
 
         virtual void visit(BasicBlock& block) {
