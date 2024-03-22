@@ -1,0 +1,1 @@
+int main() { return 34 % 34; }
