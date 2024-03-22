@@ -64,15 +64,14 @@ void X86GenVisitor::emitCmp(std::string_view instruction, const ir::BinaryOp& bi
     auto type = binaryOp.destination().type();
     auto size = type->size();
     SizedRegister rax = {Register::RAX, size};
-    SizedRegister rdx = {Register::RDX, size};
+    SizedRegister rdx = {Register::RDX, 1};
     auto suffix = getSuffix(size);
     emit("mov", suffix, binaryOp.left(), rax);
-    emit("mov", suffix, Immediate(1, type), rdx);
     emit("cmp", suffix, binaryOp.right(), rax);
-    emit("mov", suffix, Immediate(0, type), rax);
-    emit(instruction, suffix, rdx, rax);
-    emit("mov", suffix, rax, binaryOp.destination());
+    emit(instruction, rdx);
+    emit("mov", suffix, rdx, binaryOp.destination());
 }
+
 void X86GenVisitor::emitDiv(bool modulo, const ir::BinaryOp& binaryOp) {
     auto type = binaryOp.destination().type();
     auto size = type->size();
@@ -113,12 +112,12 @@ void X86GenVisitor::visit(ir::BinaryOp& binaryOp) {
         case BinaryOpKind::MUL: emitSimpleArithmetic("imul", binaryOp); break;
         case BinaryOpKind::DIV: emitDiv(false, binaryOp); break;
         case BinaryOpKind::MOD: emitDiv(true, binaryOp); break;
-        case BinaryOpKind::EQ: emitCmp("cmove", binaryOp); break;
-        case BinaryOpKind::NEQ: emitCmp("cmovne", binaryOp); break;
-        case BinaryOpKind::CMP_L: emitCmp("cmovl", binaryOp); break;
-        case BinaryOpKind::CMP_G: emitCmp("cmovg", binaryOp); break;
-        case BinaryOpKind::CMP_LE: emitCmp("cmovle", binaryOp); break;
-        case BinaryOpKind::CMP_GE: emitCmp("cmovge", binaryOp); break;
+        case BinaryOpKind::EQ: emitCmp("sete", binaryOp); break;
+        case BinaryOpKind::NEQ: emitCmp("setne", binaryOp); break;
+        case BinaryOpKind::CMP_L: emitCmp("setl", binaryOp); break;
+        case BinaryOpKind::CMP_G: emitCmp("setg", binaryOp); break;
+        case BinaryOpKind::CMP_LE: emitCmp("setle", binaryOp); break;
+        case BinaryOpKind::CMP_GE: emitCmp("setge", binaryOp); break;
         case BinaryOpKind::BIT_AND: emitSimpleArithmetic("and ", binaryOp); break;
         case BinaryOpKind::BIT_XOR: emitSimpleArithmetic("xor ", binaryOp); break;
         case BinaryOpKind::BIT_OR: emitSimpleArithmetic("or ", binaryOp); break;

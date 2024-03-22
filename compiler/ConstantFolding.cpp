@@ -24,7 +24,7 @@ void ConstantFoldingVisitor::visit(ir::BinaryOp& binaryOp) {
 
     Immediate left = std::get<Immediate>(binaryOp.left());
     Immediate right = std::get<Immediate>(binaryOp.right());
-    auto type = left.type();
+    auto type = binaryOp.destination().type();
 
     auto computeImmediate = [&binaryOp, type](auto left, auto right) {
         switch (binaryOp.operation()) {

@@ -49,7 +49,7 @@ type : type STAR # pointerType
      ;
 
 RETURN : 'return' ;
-FLAT_TYPE : 'int' | 'void' | 'char' | 'short' | 'long';
+FLAT_TYPE : 'int' | 'void' | 'char' | 'short' | 'long' | 'bool';
 IF : 'if' ;
 WHILE : 'while' ;
 ELSE : 'else' ;

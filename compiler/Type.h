@@ -23,6 +23,7 @@ namespace types {
     inline Type* INT;
     inline Type* CHAR;
     inline Type* LONG;
+    inline Type* BOOL;
     inline Type* SHORT;
     inline Type* VOID;
 }
@@ -32,6 +33,7 @@ class TypePool {
     void init() {
         types::INT = &m_simpleTypes.insert({"int", Type("int", 4)}).first->second;
         types::CHAR = &m_simpleTypes.insert({"char", Type("char", 1)}).first->second;
+        types::BOOL = &m_simpleTypes.insert({"bool", Type("bool", 1)}).first->second;
         types::LONG = &m_simpleTypes.insert({"long", Type("long", 8)}).first->second;
         types::SHORT = &m_simpleTypes.insert({"short", Type("short", 2)}).first->second;
         types::VOID = &m_simpleTypes.insert({"void", Type("void", size_t(0))}).first->second;
