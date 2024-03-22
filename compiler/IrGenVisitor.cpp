@@ -250,6 +250,8 @@ std::any IrGenVisitor::visitAssign(ifccParser::AssignContext* ctx) {
             op = BinaryOpKind::BIT_XOR;
         } else if (opStr == "|=") {
             op = BinaryOpKind::BIT_OR;
+        } else {
+            op = BinaryOpKind::BIT_OR;
         }
 
         if (res.type() != local.type()) {

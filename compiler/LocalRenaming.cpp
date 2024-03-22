@@ -4,6 +4,7 @@ using namespace ir;
 
 void LocalRenamingVisitor::visit(ir::Function& function) {
     LocalUsageVisitor usageVisitor;
+    usageVisitor.usedLocal().insert(function.returnLocal());
     for (uint32_t i = 1; i <= function.argCount(); i++) {
         usageVisitor.usedLocal().insert(Local{i, function.locals()[i].type()});
     }
