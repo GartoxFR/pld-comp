@@ -62,7 +62,7 @@ int main(int argn, const char** argv) {
 
     if (visitor.hasErrors()) {
 
-        cerr << "Des erreurs sont survenus. Abandon." << endl;
+        cerr << "Des erreurs sont survenues. Abandon." << endl;
         return 1;
     }
 

@@ -2,6 +2,7 @@
 
 #include "ir/Ir.h"
 
+//Visit IR in order to create the control flow graph
 class IrGraphVisitor : public ir::Visitor {
   public:
     IrGraphVisitor(std::ostream& out) : m_out(out) {}

@@ -28,6 +28,9 @@ expr: IDENT '(' (expr (',' expr)*)? ')' # call
     | expr SUM_OP expr # sumOp
     | expr CMP_OP expr # cmpOp
     | expr EQ_OP expr # eqOp
+    | expr BIT_AND expr # bitAnd
+    | expr BIT_XOR expr # bitXor
+    | expr BIT_OR expr # bitOr
     | expr LOGICAL_AND expr # logicalAnd
     | expr LOGICAL_OR expr # logicalOr
     | IDENT '=' expr # assign
@@ -53,6 +56,9 @@ UNARY_OP : '!' ;
 PRODUCT_OP : '*' | '/' | '%';
 CMP_OP : '>' | '<' | '>=' | '<=' ;
 EQ_OP : '==' | '!=' ;
+BIT_AND : '&' ;
+BIT_XOR : '^' ;
+BIT_OR : '|' ;
 LOGICAL_AND : '&&' ;
 LOGICAL_OR : '||' ;
 CHAR : '\'' + (~[\\'] | ('\\' + ('n' | 't' | 'r' | '0' | '\'' | '\\'))) + '\'' ;

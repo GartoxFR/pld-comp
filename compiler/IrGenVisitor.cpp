@@ -320,6 +320,24 @@ std::any IrGenVisitor::visitCall(ifccParser::CallContext *ctx) {
     return res;
 }
 
+std::any IrGenVisitor::visitBitAnd(ifccParser::BitAndContext *ctx){
+    BinaryOpKind op = BinaryOpKind::BIT_AND;
+
+    return visitBinaryOp(ctx->expr(0), ctx->expr(1), op);
+}
+
+std::any IrGenVisitor::visitBitXor(ifccParser::BitXorContext *ctx){
+    BinaryOpKind op = BinaryOpKind::BIT_XOR;
+    
+    return visitBinaryOp(ctx->expr(0), ctx->expr(1), op);
+}
+
+std::any IrGenVisitor::visitBitOr(ifccParser::BitOrContext *ctx){
+    BinaryOpKind op = BinaryOpKind::BIT_OR;
+    
+    return visitBinaryOp(ctx->expr(0), ctx->expr(1), op);
+}
+
 std::any IrGenVisitor::visitLogicalOr(ifccParser::LogicalOrContext *ctx) {
     Local res = std::any_cast<Local>(visit(ctx->expr(0)));
 

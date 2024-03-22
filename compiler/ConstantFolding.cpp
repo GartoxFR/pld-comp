@@ -37,6 +37,9 @@ void ConstantFoldingVisitor::visit(ir::BinaryOp& binaryOp) {
         case BinaryOpKind::CMP_G: folded = Immediate(left.value() > right.value()); break;
         case BinaryOpKind::CMP_LE: folded = Immediate(left.value() <= right.value()); break;
         case BinaryOpKind::CMP_GE: folded = Immediate(left.value() >= right.value()); break;
+        case BinaryOpKind::BIT_AND: folded = Immediate(left.value() & right.value()); break;
+        case BinaryOpKind::BIT_XOR: folded = Immediate(left.value() ^ right.value()); break;
+        case BinaryOpKind::BIT_OR: folded = Immediate(left.value() | right.value()); break;
     }
 
     *m_currentInstruction = std::make_unique<Assignment>(binaryOp.destination(), folded);

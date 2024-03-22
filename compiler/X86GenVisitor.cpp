@@ -141,6 +141,9 @@ void X86GenVisitor::visit(ir::BinaryOp& binaryOp) {
         case BinaryOpKind::CMP_G: emitCmp("cmovgl ", binaryOp); break;
         case BinaryOpKind::CMP_LE: emitCmp("cmovlel ", binaryOp); break;
         case BinaryOpKind::CMP_GE: emitCmp("cmovgel ", binaryOp); break;
+        case BinaryOpKind::BIT_AND: emitSimpleArithmetic("andl ", binaryOp); break;
+        case BinaryOpKind::BIT_XOR: emitSimpleArithmetic("xorl ", binaryOp); break;
+        case BinaryOpKind::BIT_OR: emitSimpleArithmetic("orl ", binaryOp); break;
     }
 }
 

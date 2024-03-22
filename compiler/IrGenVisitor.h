@@ -2,6 +2,7 @@
 
 #include "IrSymbolTable.h"
 #include "generated/ifccBaseVisitor.h"
+#include "generated/ifccParser.h"
 #include "ir/Function.h"
 #include "ir/Ir.h"
 #include <vector>
@@ -32,6 +33,10 @@ class IrGenVisitor : public ifccBaseVisitor {
     std::any visitUnaryOp(ifccParser::UnaryOpContext* ctx) override;
     std::any visitUnarySumOp(ifccParser::UnarySumOpContext* ctx) override;
     std::any visitCall(ifccParser::CallContext *ctx) override;
+
+    std::any visitBitAnd(ifccParser::BitAndContext *ctx) override;
+    std::any visitBitXor(ifccParser::BitXorContext *ctx) override;
+    std::any visitBitOr(ifccParser::BitOrContext *ctx) override;
 
     std::any visitLogicalOr(ifccParser::LogicalOrContext *ctx) override;
     std::any visitLogicalAnd(ifccParser::LogicalAndContext *ctx) override;

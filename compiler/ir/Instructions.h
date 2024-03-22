@@ -85,6 +85,9 @@ namespace ir {
         CMP_G,
         CMP_LE,
         CMP_GE,
+        BIT_AND,
+        BIT_XOR,
+        BIT_OR,
     };
 
     inline std::ostream& operator<<(std::ostream& out, const BinaryOpKind& op) {
@@ -100,6 +103,10 @@ namespace ir {
             case BinaryOpKind::CMP_G: return out << ">";
             case BinaryOpKind::CMP_LE: return out << "<=";
             case BinaryOpKind::CMP_GE: return out << ">=";
+            case BinaryOpKind::BIT_AND: return out << "&";
+            case BinaryOpKind::BIT_XOR: return out << "^";
+            case BinaryOpKind::BIT_OR: return out << "|";
+
         }
         return out;
     }
