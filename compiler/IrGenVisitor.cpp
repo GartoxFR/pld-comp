@@ -338,6 +338,38 @@ std::any IrGenVisitor::visitBitOr(ifccParser::BitOrContext *ctx){
     return visitBinaryOp(ctx->expr(0), ctx->expr(1), op);
 }
 
+std::any IrGenVisitor::visitPreIncrDecrOp(ifccParser::PreIncrDecrOpContext *ctx){
+    BinaryOpKind op;
+    std::string opStr = ctx->INCRDECR_OP()->getText();
+
+    if (opStr == "++") {
+        op = BinaryOpKind::ADD;
+    } else {
+        op = BinaryOpKind::SUB;
+    }
+
+    Local res = std::any_cast<Local>(visit(ctx->expr())) ;
+    m_currentBlock->emit<BinaryOp>(res,res,Immediate(1),op) ;
+    return res;
+}
+
+std::any IrGenVisitor::visitPostIncrDecrOp(ifccParser::PostIncrDecrOpContext *ctx){
+    BinaryOpKind op;
+    std::string opStr = ctx->INCRDECR_OP()->getText();
+
+    if (opStr == "++") {
+        op = BinaryOpKind::ADD;
+    } else {
+        op = BinaryOpKind::SUB;
+    }
+
+    Local res = std::any_cast<Local>(visit(ctx->expr())) ;
+    Local temp = m_currentFunction->newLocal();
+    m_currentBlock->emit<Assignment>(temp, res);
+    m_currentBlock->emit<BinaryOp>(res,res,Immediate(1),op) ;
+    return temp;
+}
+
 std::any IrGenVisitor::visitLogicalOr(ifccParser::LogicalOrContext *ctx) {
     Local res = std::any_cast<Local>(visit(ctx->expr(0)));
 

@@ -38,6 +38,9 @@ class IrGenVisitor : public ifccBaseVisitor {
     std::any visitBitXor(ifccParser::BitXorContext *ctx) override;
     std::any visitBitOr(ifccParser::BitOrContext *ctx) override;
 
+    std::any visitPreIncrDecrOp(ifccParser::PreIncrDecrOpContext *ctx) override;
+    std::any visitPostIncrDecrOp(ifccParser::PostIncrDecrOpContext *ctx) override;
+
     std::any visitLogicalOr(ifccParser::LogicalOrContext *ctx) override;
     std::any visitLogicalAnd(ifccParser::LogicalAndContext *ctx) override;
 

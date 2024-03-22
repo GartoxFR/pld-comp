@@ -24,6 +24,8 @@ initializer : IDENT ('=' expr | ) ;
 expr: IDENT '(' (expr (',' expr)*)? ')' # call
     | SUM_OP expr # unarySumOp
     | UNARY_OP expr # unaryOp
+    | INCRDECR_OP expr # preIncrDecrOp
+    | expr INCRDECR_OP # postIncrDecrOp
     | expr PRODUCT_OP expr # productOp
     | expr SUM_OP expr # sumOp
     | expr CMP_OP expr # cmpOp
@@ -52,6 +54,7 @@ BREAK : 'break' ;
 CONTINUE : 'continue' ;
 
 SUM_OP : '+' | '-' ;
+INCRDECR_OP : '++' | '--' ;
 UNARY_OP : '!' ;
 PRODUCT_OP : '*' | '/' | '%';
 CMP_OP : '>' | '<' | '>=' | '<=' ;
