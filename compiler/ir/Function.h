@@ -31,8 +31,7 @@ namespace ir {
       public:
         Function(const std::string& name, size_t argCount, const Type* returnType) :
             m_name(name), m_argCount(argCount), m_locals({LocalInfo(returnType)}),
-            m_prologue(generatePrologueLabel(name)), m_epilogue(generateEpilogueLabel(name)) {
-            }
+            m_prologue(generatePrologueLabel(name)), m_epilogue(generateEpilogueLabel(name)) {}
 
         Function(const std::string& name, std::initializer_list<const Type*> argTypes, const Type* returnType) :
             m_name(name), m_argCount(argTypes.size()), m_prologue(generatePrologueLabel(name)),

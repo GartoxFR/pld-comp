@@ -33,7 +33,9 @@ void X86GenVisitor::visit(ir::Function& function) {
         visit(*block);
     }
     visit(*function.epilogue());
-    loadEax(function.returnLocal());
+    SizedRegister rax {Register::RAX, function.returnLocal().type()->size()};
+    auto suffix = getSuffix(function.returnLocal().type()->size());
+    emit("mov", suffix, function.returnLocal(), rax);
 
     m_out << "    movq    %rbp, %rsp\n";
     m_out << "    popq    %rbp\n";
@@ -61,15 +63,14 @@ void X86GenVisitor::emitSimpleArithmetic(std::string_view instruction, const Bin
 }
 
 void X86GenVisitor::emitCmp(std::string_view instruction, const ir::BinaryOp& binaryOp) {
-    auto type = binaryOp.destination().type();
-    auto size = type->size();
-    SizedRegister rax = {Register::RAX, size};
+    auto operandSize = std::visit([](auto val) { return val.type()->size(); }, binaryOp.left());
+    SizedRegister rax = {Register::RAX, operandSize};
     SizedRegister rdx = {Register::RDX, 1};
-    auto suffix = getSuffix(size);
+    auto suffix = getSuffix(operandSize);
     emit("mov", suffix, binaryOp.left(), rax);
     emit("cmp", suffix, binaryOp.right(), rax);
     emit(instruction, rdx);
-    emit("mov", suffix, rdx, binaryOp.destination());
+    emit("mov", getSuffix(1), rdx, binaryOp.destination());
 }
 
 void X86GenVisitor::emitDiv(bool modulo, const ir::BinaryOp& binaryOp) {

@@ -100,7 +100,16 @@ class IrValuePropagationVisitor : public ir::Visitor {
     void visit(ir::Call& call) override;
     void visit(ir::Cast& cast) override;
 
-    void invalidateLocal(ir::Local local) { m_knownValues.erase(local); }
+    void invalidateLocal(ir::Local local) { 
+        std::cerr << "invalidate: " << local << std::endl;
+        m_knownValues.erase(local); 
+        for (auto it = m_knownValues.begin(); it != m_knownValues.end(); ) {
+            if (ir::RValue(local) == it->second) 
+                it = m_knownValues.erase(it);
+            else
+                ++it;
+        }
+    }
 
     void trySubstitute(ir::RValue& rvalue) {
         if (std::holds_alternative<ir::Local>(rvalue)) {
