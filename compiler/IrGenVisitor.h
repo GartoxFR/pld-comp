@@ -23,7 +23,7 @@ class IrGenVisitor : public ifccBaseVisitor {
     std::any visitIf(ifccParser::IfContext *ctx) override;
     std::any visitWhile(ifccParser::WhileContext *ctx) override;
 
-    std::any visitInitializer(ifccParser::InitializerContext* ctx) override;
+    std::any visitDeclare_stmt(ifccParser::Declare_stmtContext *ctx) override;
     std::any visitAssign(ifccParser::AssignContext* ctx) override;
 
     std::any visitSumOp(ifccParser::SumOpContext* ctx) override;
@@ -48,6 +48,11 @@ class IrGenVisitor : public ifccBaseVisitor {
 
     std::any visitBinaryOp(ifccParser::ExprContext* left, ifccParser::ExprContext* right, ir::BinaryOpKind op);
     std::any visitUnaryOp(ifccParser::ExprContext* operand, ir::UnaryOpKind op);
+
+    std::any visitSimpleType(ifccParser::SimpleTypeContext *ctx) override;
+    std::any visitPointerType(ifccParser::PointerTypeContext *ctx) override;
+
+    ir::Local emitCast(ir::Local source, const Type* targetType);
 
     const auto& functions() const { return m_functions; }
 

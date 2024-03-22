@@ -28,6 +28,9 @@ void GlobalValuePropagationVisitor::visit(ir::UnaryOp& unaryOp) { setNotConstant
 void GlobalValuePropagationVisitor::visit(ir::Assignment& assignment) {
     setMapping(assignment.destination(), assignment.source());
 }
+void GlobalValuePropagationVisitor::visit(ir::Cast& cast) {
+    setNotConstant(cast.destination());
+}
 void GlobalValuePropagationVisitor::visit(ir::Call& call) { setNotConstant(call.destination()); }
 
 void GlobalValuePropagationVisitor::visit(ir::BasicJump& jump) {
@@ -82,4 +85,8 @@ void IrValuePropagationVisitor::visit(ir::Call& call) {
     for (auto& arg : call.args()) {
         trySubstitute(arg);
     }
+}
+void IrValuePropagationVisitor::visit(ir::Cast& cast) {
+    trySubstitute(cast.source());
+    invalidateLocal(cast.destination());
 }

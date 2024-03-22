@@ -9,6 +9,7 @@ class ConstantFoldingVisitor : public ir::Visitor {
     void visit(ir::BasicBlock& block) override;
     void visit(ir::BinaryOp& binaryOp) override;
     void visit(ir::UnaryOp& unaryOp) override;
+    void visit(ir::Cast& cast) override;
     void visit(ir::ConditionalJump& jump) override;
 
     bool changed() const { return m_changed; }

@@ -15,6 +15,7 @@ class GlobalValuePropagationVisitor : public ir::Visitor {
     void visit(ir::Call& call) override;
     void visit(ir::BasicJump& jump) override;
     void visit(ir::ConditionalJump& jump) override;
+    void visit(ir::Cast& cast) override;
 
     std::unordered_map<const ir::BasicBlock*, std::unordered_map<ir::Local, ir::RValue>> mappings() {
         std::unordered_map<const ir::BasicBlock*, std::unordered_map<ir::Local, ir::RValue>> res;
@@ -97,6 +98,7 @@ class IrValuePropagationVisitor : public ir::Visitor {
     void visit(ir::Assignment& assignment) override;
     void visit(ir::ConditionalJump& jump) override;
     void visit(ir::Call& call) override;
+    void visit(ir::Cast& cast) override;
 
     void invalidateLocal(ir::Local local) { m_knownValues.erase(local); }
 

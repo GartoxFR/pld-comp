@@ -53,3 +53,8 @@ void TwoStepAssignmentEliminationVisitor::visit(ir::Call& call) {
         variableUsed(arg);
     }
 }
+
+void TwoStepAssignmentEliminationVisitor::visit(ir::Cast& cast) {
+    variableAssigned(cast.destination());
+    variableUsed(cast.source());
+}

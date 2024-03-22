@@ -20,6 +20,7 @@ class BlockLivenessAnalysisVisitor : public ir::Visitor {
     void visit(ir::Assignment& assignment) override;
     void visit(ir::ConditionalJump& jump) override;
     void visit(ir::Call& call) override;
+    void visit(ir::Cast& cast) override;
 
     auto& blocksLiveness() {
         return m_liveMap;

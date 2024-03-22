@@ -53,6 +53,15 @@ void DeadCodeElimination::visit(ir::Assignment& assignment) {
     setLive(assignment.source());
 }
 
+void DeadCodeElimination::visit(ir::Cast& cast) {
+    if (tryDrop(cast.destination())) {
+        return;
+    }
+
+    unsetLive(cast.destination());
+    setLive(cast.source());
+}
+
 void DeadCodeElimination::visit(ir::ConditionalJump& jump) { setLive(jump.condition()); }
 void DeadCodeElimination::visit(ir::Call& call) {
     for (auto& arg : call.args()) {

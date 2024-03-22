@@ -16,6 +16,7 @@ class TwoStepAssignmentEliminationVisitor : public ir::Visitor {
     void visit(ir::Assignment& assignment) override;
     void visit(ir::ConditionalJump& jump) override;
     void visit(ir::Call& call) override;
+    void visit(ir::Cast& cast) override;
 
     void variableUsed(ir::RValue rvalue) {
         if (std::holds_alternative<ir::Local>(rvalue))

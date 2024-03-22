@@ -1,29 +1,36 @@
 #include "./IrGenVisitor.h"
 #include "generated/ifccParser.h"
 #include "ir/Instructions.h"
+#include "Type.h"
+#include <memory>
 
 using namespace ir;
 
-const Function PUTCHAR("putchar", 1);
-const Function GETCHAR("getchar", 0);
+static std::unique_ptr<Function> PUTCHAR;
+static std::unique_ptr<Function> GETCHAR;
 
 IrGenVisitor::IrGenVisitor() {
-    m_symbolTable.declareFunction(PUTCHAR);
-    m_symbolTable.declareFunction(GETCHAR);
+    PUTCHAR = std::unique_ptr<Function>(new Function("putchar", {types::INT}, types::INT));
+    GETCHAR = std::unique_ptr<Function>(new Function("getchar", {}, types::INT));
+
+    m_symbolTable.declareFunction(*PUTCHAR);
+    m_symbolTable.declareFunction(*GETCHAR);
 }
 
-std::any IrGenVisitor::visitFunction(ifccParser::FunctionContext *ctx)  {
+std::any IrGenVisitor::visitFunction(ifccParser::FunctionContext* ctx) {
     m_symbolTable.enterNewLocalScope();
 
     std::string functionName = ctx->IDENT()->getText();
-    m_functions.push_back(std::make_unique<Function>(functionName, ctx->functionArg().size()));
+    auto returnType = std::any_cast<const Type*>(visit(ctx->type()));
+    m_functions.push_back(std::make_unique<Function>(functionName, ctx->functionArg().size(), returnType));
     m_currentFunction = m_functions.back().get();
 
     m_symbolTable.declareFunction(*m_currentFunction);
 
     for (auto arg : ctx->functionArg()) {
+        auto type = std::any_cast<const Type*>(visit(arg->type()));
         std::string argName = arg->IDENT()->getText();
-        Local argLocal = m_currentFunction->newLocal(argName);
+        Local argLocal = m_currentFunction->newLocal(argName, type);
         m_symbolTable.declareLocalVariable(argName, argLocal);
     }
 
@@ -46,6 +53,10 @@ std::any IrGenVisitor::visitReturn_stmt(ifccParser::Return_stmtContext* ctx) {
         Local res = std::any_cast<Local>(visit(ctx->expr()));
         Local returnLocal = m_currentFunction->returnLocal();
 
+        if (res.type() != returnLocal.type()) {
+            res = emitCast(res, returnLocal.type());
+        }
+
         m_currentBlock->emit<Assignment>(returnLocal, res);
     }
 
@@ -55,11 +66,10 @@ std::any IrGenVisitor::visitReturn_stmt(ifccParser::Return_stmtContext* ctx) {
     unreachableBlock->terminate<BasicJump>(m_currentFunction->epilogue());
 
     m_currentBlock = unreachableBlock;
-    
 
     return 0;
 }
-std::any IrGenVisitor::visitBreak(ifccParser::BreakContext *ctx) {
+std::any IrGenVisitor::visitBreak(ifccParser::BreakContext* ctx) {
     if (m_breakableScopes.empty()) {
         error = true;
         std::cerr << "Error: Break not in a loop";
@@ -77,7 +87,7 @@ std::any IrGenVisitor::visitBreak(ifccParser::BreakContext *ctx) {
     return 0;
 }
 
-std::any IrGenVisitor::visitContinue(ifccParser::ContinueContext *ctx) {
+std::any IrGenVisitor::visitContinue(ifccParser::ContinueContext* ctx) {
     if (m_breakableScopes.empty()) {
         error = true;
         std::cerr << "Error: Continue not in a loop";
@@ -97,12 +107,12 @@ std::any IrGenVisitor::visitContinue(ifccParser::ContinueContext *ctx) {
 
 std::any IrGenVisitor::visitConst(ifccParser::ConstContext* ctx) {
     int value = std::stoi(ctx->CONST()->getText());
-    Local res = m_currentFunction->newLocal();
-    m_currentBlock->emit<Assignment>(res, Immediate(value));
+    Local res = m_currentFunction->newLocal(types::INT);
+    m_currentBlock->emit<Assignment>(res, Immediate(value, types::INT));
     return res;
 }
 
-std::any IrGenVisitor::visitCharLiteral(ifccParser::CharLiteralContext *ctx) {
+std::any IrGenVisitor::visitCharLiteral(ifccParser::CharLiteralContext* ctx) {
     auto text = ctx->CHAR()->getText();
     int value;
     if (text[1] != '\\') {
@@ -121,8 +131,8 @@ std::any IrGenVisitor::visitCharLiteral(ifccParser::CharLiteralContext *ctx) {
         }
     }
 
-    Local res = m_currentFunction->newLocal();
-    m_currentBlock->emit<Assignment>(res, Immediate(value));
+    Local res = m_currentFunction->newLocal(types::INT);
+    m_currentBlock->emit<Assignment>(res, Immediate(value, types::INT));
     return res;
 }
 
@@ -134,15 +144,15 @@ std::any IrGenVisitor::visitVar(ifccParser::VarContext* ctx) {
     return m_symbolTable.getLocalVariable(ident);
 }
 
-std::any IrGenVisitor::visitBlock(ifccParser::BlockContext *ctx) {
+std::any IrGenVisitor::visitBlock(ifccParser::BlockContext* ctx) {
     m_symbolTable.enterNewLocalScope();
     visitChildren(ctx);
     m_symbolTable.exitLocalScope();
-    
+
     return 0;
 }
 
-std::any IrGenVisitor::visitIf(ifccParser::IfContext *ctx) {
+std::any IrGenVisitor::visitIf(ifccParser::IfContext* ctx) {
     Local cond = std::any_cast<Local>(visit(ctx->expr()));
 
     BasicBlock* thenBlock = m_currentFunction->newBlock();
@@ -164,11 +174,11 @@ std::any IrGenVisitor::visitIf(ifccParser::IfContext *ctx) {
     }
 
     m_currentBlock = endBlock;
-    
+
     return 0;
 }
 
-std::any IrGenVisitor::visitWhile(ifccParser::WhileContext *ctx) {
+std::any IrGenVisitor::visitWhile(ifccParser::WhileContext* ctx) {
     // Setup the test block
     BasicBlock* testBlock = m_currentFunction->newBlock();
     testBlock->terminate<BasicJump>(testBlock);
@@ -190,25 +200,32 @@ std::any IrGenVisitor::visitWhile(ifccParser::WhileContext *ctx) {
 
     m_breakableScopes.pop_back();
     m_currentBlock = endBlock;
-    
+
     return 0;
 }
 
-std::any IrGenVisitor::visitInitializer(ifccParser::InitializerContext* ctx) {
+std::any IrGenVisitor::visitDeclare_stmt(ifccParser::Declare_stmtContext* ctx) {
+    auto type = std::any_cast<const Type*>(visit(ctx->type()));
 
-    std::string ident = ctx->IDENT()->getText();
+    for (auto initializerCtx : ctx->initializer()) {
 
-    Local local = m_currentFunction->newLocal(ident);
+        std::string ident = initializerCtx->IDENT()->getText();
+        Local local = m_currentFunction->newLocal(ident, type);
 
-    m_symbolTable.declareLocalVariable(ident, local);
+        m_symbolTable.declareLocalVariable(ident, local);
 
-    // Variable is initialized
-    if (ctx->expr()) {
-        Local res = std::any_cast<Local>(visit(ctx->expr()));
-        m_currentBlock->emit<Assignment>(local, res);
+        // Variable is initialized
+        if (initializerCtx->expr()) {
+            Local res = std::any_cast<Local>(visit(initializerCtx->expr()));
+            if (res.type() != type) {
+                res = emitCast(res, type);
+            }
+            m_currentBlock->emit<Assignment>(local, res);
+        }
     }
     return 0;
 }
+
 std::any IrGenVisitor::visitAssign(ifccParser::AssignContext* ctx) {
     std::string ident = ctx->IDENT()->getText();
     Local local = m_symbolTable.getLocalVariable(ident);
@@ -235,9 +252,17 @@ std::any IrGenVisitor::visitAssign(ifccParser::AssignContext* ctx) {
             op = BinaryOpKind::BIT_OR;
         }
 
+        if (res.type() != local.type()) {
+            // TODO: Check if this is right semantic
+            res = emitCast(res, local.type());
+        }
+
         m_currentBlock->emit<BinaryOp>(local, local, res, op);
 
     } else {
+        if (res.type() != local.type()) {
+            res = emitCast(res, local.type());
+        }
         m_currentBlock->emit<Assignment>(local, res);
     }
     
@@ -258,11 +283,14 @@ std::any IrGenVisitor::visitSumOp(ifccParser::SumOpContext* ctx) {
 std::any IrGenVisitor::visitProductOp(ifccParser::ProductOpContext* ctx) {
     BinaryOpKind op;
 
-    switch (ctx->PRODUCT_OP()->getText()[0]) {
-        case '*': op = BinaryOpKind::MUL; break;
-        case '/': op = BinaryOpKind::DIV; break;
-        case '%': op = BinaryOpKind::MOD; break;
-        default: return 0;
+    if (ctx->PRODUCT_OP()) {
+        switch (ctx->PRODUCT_OP()->getText()[0]) {
+            case '/': op = BinaryOpKind::DIV; break;
+            case '%': op = BinaryOpKind::MOD; break;
+            default: return 0;
+        }
+    } else {
+        op = BinaryOpKind::MUL;
     }
 
     return visitBinaryOp(ctx->expr(0), ctx->expr(1), op);
@@ -298,16 +326,28 @@ std::any IrGenVisitor::visitEqOp(ifccParser::EqOpContext* ctx) {
 
 std::any
 IrGenVisitor::visitBinaryOp(ifccParser::ExprContext* left, ifccParser::ExprContext* right, ir::BinaryOpKind op) {
-    Local res = m_currentFunction->newLocal();
     Local leftRes = std::any_cast<Local>(visit(left));
     Local rightRes = std::any_cast<Local>(visit(right));
+
+    const Type* resType;
+    if (leftRes.type() == rightRes.type()) {
+        resType = leftRes.type();
+    } else if (leftRes.type()->size() < rightRes.type()->size()) {
+        resType = rightRes.type();
+        leftRes = emitCast(leftRes, resType);
+    } else if (leftRes.type()->size() >= rightRes.type()->size()) {
+        resType = leftRes.type();
+        rightRes = emitCast(rightRes, resType);
+    }
+
+    Local res = m_currentFunction->newLocal(resType);
     m_currentBlock->emit<BinaryOp>(res, leftRes, rightRes, op);
     return res;
 }
 
 std::any IrGenVisitor::visitUnaryOp(ifccParser::ExprContext* operand, ir::UnaryOpKind op) {
-    Local res = m_currentFunction->newLocal();
     Local operandRes = std::any_cast<Local>(visit(operand));
+    Local res = m_currentFunction->newLocal(operandRes.type());
     m_currentBlock->emit<UnaryOp>(res, operandRes, op);
     return res;
 }
@@ -330,20 +370,28 @@ std::any IrGenVisitor::visitUnarySumOp(ifccParser::UnarySumOpContext* ctx) {
     return visitUnaryOp(ctx->expr(), kind);
 }
 
-std::any IrGenVisitor::visitCall(ifccParser::CallContext *ctx) {
-    if (!m_symbolTable.checkFunction(ctx->IDENT()->getText(), ctx->expr().size())) {
-        return m_currentFunction->newLocal();
+std::any IrGenVisitor::visitCall(ifccParser::CallContext* ctx) {
+    auto ident = ctx->IDENT()->getText();
+    if (!m_symbolTable.checkFunction(ident, ctx->expr().size())) {
+        return m_currentFunction->newLocal(types::VOID);
     }
 
-    Local res = m_currentFunction->newLocal();
+    const Function* function = m_symbolTable.getFunction(ident);
+    Local res = m_currentFunction->newLocal(function->returnLocal().type());
     std::vector<RValue> args;
     args.reserve(ctx->expr().size());
+    int i = 1;
     for (auto& arg : ctx->expr()) {
+        auto argType = function->locals()[i].type();
         Local local = std::any_cast<Local>(visit(arg));
+        if (local.type() != argType) {
+            local = emitCast(local, argType);
+        }
         args.push_back(local);
+        ++i;
     }
 
-    m_currentBlock->emit<Call>(res, ctx->IDENT()->getText(), args);
+    m_currentBlock->emit<Call>(res, ident, args);
 
     return res;
 }
@@ -377,7 +425,7 @@ std::any IrGenVisitor::visitPreIncrDecrOp(ifccParser::PreIncrDecrOpContext *ctx)
     }
 
     Local res = std::any_cast<Local>(visit(ctx->expr())) ;
-    m_currentBlock->emit<BinaryOp>(res,res,Immediate(1),op) ;
+    m_currentBlock->emit<BinaryOp>(res,res,Immediate(1, res.type()),op) ;
     return res;
 }
 
@@ -392,9 +440,9 @@ std::any IrGenVisitor::visitPostIncrDecrOp(ifccParser::PostIncrDecrOpContext *ct
     }
 
     Local res = std::any_cast<Local>(visit(ctx->expr()));
-    Local temp = m_currentFunction->newLocal();
+    Local temp = m_currentFunction->newLocal(res.type());
     m_currentBlock->emit<Assignment>(temp, res);
-    m_currentBlock->emit<BinaryOp>(res, res, Immediate(1), op);
+    m_currentBlock->emit<BinaryOp>(res, res, Immediate(1, res.type()), op);
     return temp;
 }
 
@@ -418,7 +466,7 @@ std::any IrGenVisitor::visitLogicalOr(ifccParser::LogicalOrContext *ctx) {
     return res;
 }
 
-std::any IrGenVisitor::visitLogicalAnd(ifccParser::LogicalAndContext *ctx) {
+std::any IrGenVisitor::visitLogicalAnd(ifccParser::LogicalAndContext* ctx) {
     Local res = std::any_cast<Local>(visit(ctx->expr(0)));
 
     BasicBlock* andBlock = m_currentFunction->newBlock();
@@ -435,5 +483,20 @@ std::any IrGenVisitor::visitLogicalAnd(ifccParser::LogicalAndContext *ctx) {
 
     m_currentBlock = endBlock;
 
+    return res;
+}
+
+std::any IrGenVisitor::visitSimpleType(ifccParser::SimpleTypeContext* ctx) {
+    return make_simple_type(ctx->FLAT_TYPE()->getText());
+}
+
+std::any IrGenVisitor::visitPointerType(ifccParser::PointerTypeContext* ctx) {
+    const Type* pointee = std::any_cast<const Type*>(visit(ctx->type()));
+    return make_pointer_type(pointee);
+}
+
+ir::Local IrGenVisitor::emitCast(ir::Local source, const Type* targetType) {
+    Local res = m_currentFunction->newLocal(targetType);
+    m_currentBlock->emit<Cast>(res, source);
     return res;
 }

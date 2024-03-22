@@ -18,6 +18,7 @@
 #include "BlockDependance.h"
 #include "LocalRenaming.h"
 #include "TwoStepAssignmentElimination.h"
+#include "Type.h"
 #include "X86GenVisitor.h"
 #include "antlr4-runtime.h"
 #include "generated/ifccLexer.h"
@@ -56,6 +57,7 @@ int main(int argn, const char** argv) {
         cerr << "error: syntax error during parsing" << endl;
         exit(1);
     }
+    globalTypePool.init();
 
     IrGenVisitor visitor;
     visitor.visit(tree);

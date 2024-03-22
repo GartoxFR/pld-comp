@@ -10,3 +10,5 @@ void UnaryOp::accept(Visitor& visitor) { visitor.visit(*this); }
 void Assignment::accept(Visitor& visitor) { visitor.visit(*this); }
 
 void Call::accept(Visitor& visitor) { visitor.visit(*this); }
+
+void Cast::accept(Visitor& visitor) { visitor.visit(*this); }

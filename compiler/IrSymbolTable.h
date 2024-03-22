@@ -40,7 +40,7 @@ class IrSymbolTable {
         m_error = true;
 
         // We return a Local but the IR won't be valid anyway since we have undeclared variables
-        return ir::Local{INT32_MAX};
+        return ir::Local{INT32_MAX, types::VOID};
     }
 
     void declareFunction(const ir::Function& function) {
@@ -67,6 +67,10 @@ class IrSymbolTable {
         }
 
         return true;
+    }
+
+    const ir::Function* getFunction(const std::string& name) {
+        return m_functions.at(name);
     }
 
   private:

@@ -13,7 +13,7 @@ void BlockLivenessAnalysisVisitor::visit(ir::Function& function) {
         [](auto& block) { return block.get(); }
     );
     toVisit.push_back(function.epilogue());
-    m_liveMap[function.epilogue()].second = {Local{0}};
+    m_liveMap[function.epilogue()].second = {function.returnLocal()};
     while (!toVisit.empty()) {
         BasicBlock* current = toVisit.back();
         toVisit.pop_back();
@@ -55,10 +55,14 @@ void BlockLivenessAnalysisVisitor::visit(ir::Assignment& assignment) {
     setLive(assignment.source());
 }
 
+void BlockLivenessAnalysisVisitor::visit(ir::Cast& cast) {
+    unsetLive(cast.destination());
+    setLive(cast.source());
+}
+
 void BlockLivenessAnalysisVisitor::visit(ir::ConditionalJump& jump) { setLive(jump.condition()); }
 void BlockLivenessAnalysisVisitor::visit(ir::Call& call) {
     for (auto& arg : call.args()) {
         setLive(arg);
     }
 }
-

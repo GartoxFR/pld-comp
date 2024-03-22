@@ -1,6 +1,8 @@
 #pragma once
 
+#include "../Type.h"
 #include "Visitable.h"
+#include <cassert>
 #include <cstdint>
 #include <ostream>
 #include <string>
@@ -33,9 +35,11 @@ namespace ir {
     // A local variable being a temporary or named variable
     class Local {
       public:
-        explicit Local(uint32_t id) : m_id(id) {}
+        explicit Local(uint32_t id, const Type* type) : m_id(id), m_type(type) {}
 
         uint32_t id() const { return m_id; }
+
+        auto type() const { return m_type; }
 
         bool operator==(const Local& other) const { return m_id == other.m_id; }
 
@@ -45,23 +49,30 @@ namespace ir {
 
       private:
         uint32_t m_id;
+        const Type* m_type;
     };
 
     // An immediate value (constant like 5 or 42)
     class Immediate {
       public:
-        explicit Immediate(uint32_t value) : m_value(value) {}
+        explicit Immediate(int64_t value, const Type* type) : m_value(value), m_type(type) { assert(type != nullptr); }
 
-        int32_t value() const { return m_value; }
+        int32_t value32() const { return m_value; }
+        int64_t value64() const { return m_value; }
+        int8_t value8() const { return m_value; }
+        int16_t value16() const { return m_value; }
 
-        bool operator==(const Immediate& immediate) const {
-            return immediate.m_value == m_value;
+        auto type() const { return m_type; }
+
+        bool operator==(const Immediate& immediate) const { return immediate.m_value == m_value; }
+
+        friend inline std::ostream& operator<<(std::ostream& out, const Immediate& self) {
+            return out << self.value32();
         }
 
-        friend inline std::ostream& operator<<(std::ostream& out, const Immediate& self) { return out << self.value(); }
-
       private:
-        int32_t m_value;
+        int64_t m_value;
+        const Type* m_type;
     };
 
     // Anything that can be used as an operand
@@ -205,7 +216,8 @@ namespace ir {
             out << m_destination << " := " << m_name << "(";
             bool first = true;
             for (auto& arg : m_args) {
-                if (!first) out << ", ";
+                if (!first)
+                    out << ", ";
                 first = false;
                 out << arg;
             }
@@ -226,6 +238,27 @@ namespace ir {
         Local m_destination;
         std::string m_name;
         std::vector<RValue> m_args;
+    };
+
+    class Cast : public Instruction {
+      public:
+        Cast(Local m_destination, RValue m_source) : m_destination(m_destination), m_source(m_source) {}
+
+        const Local& destination() const { return m_destination; }
+        Local& destination() { return m_destination; }
+
+        const RValue& source() const { return m_source; }
+        RValue& source() { return m_source; }
+
+        void accept(Visitor& visitor) override;
+
+        void print(std::ostream& out) const override {
+            out << m_destination << " := (" << m_destination.type()->name() << ") " << m_source;
+        }
+
+      private:
+        Local m_destination;
+        RValue m_source;
     };
 }
 

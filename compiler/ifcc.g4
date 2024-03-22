@@ -2,9 +2,9 @@ grammar ifcc;
 
 axiom : function* EOF ;
 
-function : INT IDENT '(' (functionArg (',' functionArg)*)? ')' block;
+function : type IDENT '(' (functionArg (',' functionArg)*)? ')' block;
 
-functionArg : INT IDENT ;
+functionArg : type IDENT ;
 
 stmt : expr ';' | declare_stmt | block | if | while | return_stmt | break | continue ;
 
@@ -17,7 +17,7 @@ block : '{' stmt* '}' ;
 break : BREAK ';' ;
 continue : CONTINUE ';' ;
 
-declare_stmt : INT idents+=initializer (',' idents+=initializer)* ';' ;
+declare_stmt : type idents+=initializer (',' idents+=initializer)* ';' ;
 
 initializer : IDENT ('=' expr | ) ;
 
@@ -26,7 +26,7 @@ expr: IDENT '(' (expr (',' expr)*)? ')' # call
     | UNARY_OP expr # unaryOp
     | INCRDECR_OP expr # preIncrDecrOp
     | expr INCRDECR_OP # postIncrDecrOp
-    | expr PRODUCT_OP expr # productOp
+    | expr (STAR | PRODUCT_OP) expr # productOp
     | expr SUM_OP expr # sumOp
     | expr CMP_OP expr # cmpOp
     | expr EQ_OP expr # eqOp
@@ -44,20 +44,24 @@ expr: IDENT '(' (expr (',' expr)*)? ')' # call
 
 return_stmt: RETURN expr? ';' ;
 
+type : type STAR # pointerType
+     | FLAT_TYPE # simpleType
+     ;
 
 RETURN : 'return' ;
-INT : 'int' ;
+FLAT_TYPE : 'int' | 'void' | 'char' | 'short' | 'long';
 IF : 'if' ;
 WHILE : 'while' ;
 ELSE : 'else' ;
 BREAK : 'break' ;
 CONTINUE : 'continue' ;
+STAR : '*' ;
 
 ASSIGN_OP : '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '^=' | '|=' ;
 SUM_OP : '+' | '-' ;
 INCRDECR_OP : '++' | '--' ;
 UNARY_OP : '!' ;
-PRODUCT_OP : '*' | '/' | '%';
+PRODUCT_OP : '/' | '%';
 CMP_OP : '>' | '<' | '>=' | '<=' ;
 EQ_OP : '==' | '!=' ;
 BIT_AND : [&] ;
