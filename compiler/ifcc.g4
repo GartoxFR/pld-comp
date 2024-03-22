@@ -35,7 +35,7 @@ expr: IDENT '(' (expr (',' expr)*)? ')' # call
     | expr BIT_OR expr # bitOr
     | expr LOGICAL_AND expr # logicalAnd
     | expr LOGICAL_OR expr # logicalOr
-    | IDENT '=' expr # assign
+    | IDENT ('=' | ASSIGN_OP) expr # assign
     | CONST # const
     | CHAR  # charLiteral
     | IDENT # var 
@@ -53,15 +53,16 @@ ELSE : 'else' ;
 BREAK : 'break' ;
 CONTINUE : 'continue' ;
 
+ASSIGN_OP : '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '^=' | '|=' ;
 SUM_OP : '+' | '-' ;
 INCRDECR_OP : '++' | '--' ;
 UNARY_OP : '!' ;
 PRODUCT_OP : '*' | '/' | '%';
 CMP_OP : '>' | '<' | '>=' | '<=' ;
 EQ_OP : '==' | '!=' ;
-BIT_AND : '&' ;
-BIT_XOR : '^' ;
-BIT_OR : '|' ;
+BIT_AND : [&] ;
+BIT_XOR : [^] ;
+BIT_OR : [|] ;
 LOGICAL_AND : '&&' ;
 LOGICAL_OR : '||' ;
 CHAR : '\'' + (~[\\'] | ('\\' + ('n' | 't' | 'r' | '0' | '\'' | '\\'))) + '\'' ;

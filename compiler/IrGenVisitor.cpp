@@ -213,8 +213,36 @@ std::any IrGenVisitor::visitAssign(ifccParser::AssignContext* ctx) {
     std::string ident = ctx->IDENT()->getText();
     Local local = m_symbolTable.getLocalVariable(ident);
     Local res = std::any_cast<Local>(visit(ctx->expr()));
-    m_currentBlock->emit<Assignment>(local, res);
+    
+    if(ctx->ASSIGN_OP()){
+        BinaryOpKind op;
+        std::string opStr = ctx->ASSIGN_OP()->getText();
+        if (opStr == "+=") {
+            op = BinaryOpKind::ADD;
+        } else if (opStr == "-=") {
+            op = BinaryOpKind::SUB;
+        } else if (opStr == "*=") {
+            op = BinaryOpKind::MUL;
+        } else if (opStr == "/=") {
+            op = BinaryOpKind::DIV;
+        } else if (opStr == "%=") {
+            op = BinaryOpKind::MOD;
+        } else if (opStr == "&=") {
+            op = BinaryOpKind::BIT_AND;
+        } else if (opStr == "^=") {
+            op = BinaryOpKind::BIT_XOR;
+        } else if (opStr == "|=") {
+            op = BinaryOpKind::BIT_OR;
+        }
+
+        m_currentBlock->emit<BinaryOp>(local, local, res, op);
+
+    } else {
+        m_currentBlock->emit<Assignment>(local, res);
+    }
+    
     return local;
+   
 }
 
 std::any IrGenVisitor::visitSumOp(ifccParser::SumOpContext* ctx) {
@@ -363,10 +391,10 @@ std::any IrGenVisitor::visitPostIncrDecrOp(ifccParser::PostIncrDecrOpContext *ct
         op = BinaryOpKind::SUB;
     }
 
-    Local res = std::any_cast<Local>(visit(ctx->expr())) ;
+    Local res = std::any_cast<Local>(visit(ctx->expr()));
     Local temp = m_currentFunction->newLocal();
     m_currentBlock->emit<Assignment>(temp, res);
-    m_currentBlock->emit<BinaryOp>(res,res,Immediate(1),op) ;
+    m_currentBlock->emit<BinaryOp>(res, res, Immediate(1), op);
     return temp;
 }
 
