@@ -1,4 +1,5 @@
 #include "./X86GenVisitor.h"
+#include "Type.h"
 #include "ir/Instructions.h"
 #include <stdexcept>
 #include <string_view>
@@ -129,20 +130,21 @@ void X86GenVisitor::visit(ir::UnaryOp& unaryOp) {
     auto type = unaryOp.destination().type();
     auto size = type->size();
     SizedRegister rax = {Register::RAX, size};
-    SizedRegister rdx = {Register::RDX, size};
+    SizedRegister al = {Register::RAX, types::BOOL->size()};
     auto suffix = getSuffix(size);
+    SizedRegister destRegister = rax;
     emit("mov", suffix, unaryOp.operand(), rax);
     switch (unaryOp.operation()) {
         case UnaryOpKind::MINUS: emit("neg", suffix, rax);
 
         case UnaryOpKind::NOT:
-            emit("mov", suffix, Immediate(1, type), rdx);
             emit("test", rax, rax);
-            emit("mov", suffix, Immediate(0, type), rax);
-            emit("cmovz", suffix, rdx, rax);
+            emit("setz", al);
+            destRegister = al;
             break;
     }
-    emit("mov", suffix, rax, unaryOp.destination());
+    auto destSuffix = getSuffix(destRegister.size);
+    emit("mov", destSuffix, destRegister, unaryOp.destination());
 }
 
 void X86GenVisitor::visit(ir::Assignment& assignment) {

@@ -351,9 +351,13 @@ std::any IrGenVisitor::visitBinaryOp(
     return res;
 }
 
-std::any IrGenVisitor::visitUnaryOp(ifccParser::ExprContext* operand, ir::UnaryOpKind op) {
+std::any IrGenVisitor::visitUnaryOp(ifccParser::ExprContext* operand, ir::UnaryOpKind op, bool comp) {
     Local operandRes = std::any_cast<Local>(visit(operand));
-    Local res = m_currentFunction->newLocal(operandRes.type());
+    auto resType = operandRes.type();
+    if (comp) {
+        resType = types::BOOL;
+    }
+    Local res = m_currentFunction->newLocal(resType);
     m_currentBlock->emit<UnaryOp>(res, operandRes, op);
     return res;
 }
@@ -364,7 +368,7 @@ std::any IrGenVisitor::visitUnaryOp(ifccParser::UnaryOpContext* ctx) {
         case '!': kind = UnaryOpKind::NOT; break;
         default: return visit(ctx->expr());
     }
-    return visitUnaryOp(ctx->expr(), kind);
+    return visitUnaryOp(ctx->expr(), kind, true);
 }
 
 std::any IrGenVisitor::visitUnarySumOp(ifccParser::UnarySumOpContext* ctx) {
