@@ -10,7 +10,11 @@ class PointedLocalsGatherer : public ir::Visitor {
   public:
     using ir::Visitor::visit;
 
-    void visit(ir::AddressOf& instr) override { m_pointedLocals.insert(instr.source()); }
+    void visit(ir::AddressOf& instr) override { 
+        if (std::holds_alternative<ir::Local>(instr.source())) {
+            m_pointedLocals.insert(std::get<ir::Local>(instr.source())); 
+        }
+    }
 
   private:
     PointedLocals m_pointedLocals;

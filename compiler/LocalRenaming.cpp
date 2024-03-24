@@ -1,4 +1,5 @@
 #include "LocalRenaming.h"
+#include <variant>
 
 using namespace ir;
 
@@ -67,7 +68,9 @@ void LocalRenamingVisitor::visit(ir::PointerWrite& write) {
 }
 void LocalRenamingVisitor::visit(ir::AddressOf& address) {
     tryRename(address.destination());
-    tryRename(address.source());
+    if (std::holds_alternative<ir::Local>(address.source())) {
+        tryRename(std::get<ir::Local>(address.source()));
+    }
 }
 
 void LocalUsageVisitor::visit(ir::BinaryOp& binaryOp) {
@@ -105,5 +108,7 @@ void LocalUsageVisitor::visit(ir::PointerWrite& write) {
 }
 void LocalUsageVisitor::visit(ir::AddressOf& address) {
     setUsed(address.destination());
-    setUsed(address.source());
+    if (std::holds_alternative<ir::Local>(address.source())) {
+        setUsed(std::get<ir::Local>(address.source()));
+    }
 }

@@ -15,6 +15,8 @@ static constexpr Register CALL_REGISTER[] = {
 };
 
 void X86GenVisitor::visit(ir::Function& function) {
+    m_currentFunction = &function;
+    m_out << ".section .text\n";
     m_out << ".global " << function.name() << "\n";
     m_out << function.name() << ":\n";
     m_out << "    pushq   %rbp\n";
@@ -41,6 +43,15 @@ void X86GenVisitor::visit(ir::Function& function) {
     m_out << "    movq    %rbp, %rsp\n";
     m_out << "    popq    %rbp\n";
     m_out << "    ret\n";
+
+    m_out << "\n";
+    m_out << ".section .rodata\n";
+    int i = 0;
+    for (const auto& literal : function.literals()) {
+        m_out << literalLabel(StringLiteral(i)) << ":\n";
+        m_out << "    .asciz\t\"" << literal << "\"\n"; 
+        i++;
+    }
 }
 
 void X86GenVisitor::visit(ir::BasicBlock& block) {
@@ -229,6 +240,13 @@ void X86GenVisitor::visit(ir::PointerWrite& pointerWrite) {
 }
 void X86GenVisitor::visit(ir::AddressOf& addressOf) {
     SizedRegister rax = {Register::RAX, 8};
-    emit("leaq", addressOf.source(), rax);
-    emit("movq", rax, addressOf.destination());
+    if (std::holds_alternative<Local>(addressOf.source())) {
+        Local source = std::get<Local>(addressOf.source());
+        emit("leaq", source, rax);
+        emit("movq", rax, addressOf.destination());
+    } else {
+        StringLiteral literal = std::get<StringLiteral>(addressOf.source());
+        emit("leaq", Label(literalLabel(literal)), rax);
+        emit("movq", rax, addressOf.destination());
+    }
 }

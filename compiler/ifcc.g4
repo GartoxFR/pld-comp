@@ -39,6 +39,7 @@ expr: IDENT '(' (expr (',' expr)*)? ')' # call
     | lvalue ('=' | ASSIGN_OP) expr # assign
     | CONST # const
     | CHAR  # charLiteral
+    | STRING  # stringLiteral
     | lvalue # lvalueExpr
     | '(' expr ')' # par
     ;
@@ -75,7 +76,8 @@ BIT_XOR : [^] ;
 BIT_OR : [|] ;
 LOGICAL_AND : '&&' ;
 LOGICAL_OR : '||' ;
-CHAR : '\'' + (~[\\'] | ('\\' + ('n' | 't' | 'r' | '0' | '\'' | '\\'))) + '\'' ;
+CHAR : '\'' (~[\\'] | ('\\' + ('n' | 't' | 'r' | '0' | '\'' | '\\'))) '\'' ;
+STRING : '"' ((~[\\"] | ('\\' + ('n' | 't' | 'r' | '0' | '"' | '\\')))*?) '"' ;
 CONST : [0-9]+ ;
 IDENT : [a-zA-Z][a-zA-Z0-9]* ;
 COMMENT : '/*' .*? '*/' -> skip ;

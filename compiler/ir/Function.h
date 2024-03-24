@@ -65,6 +65,13 @@ namespace ir {
             return Local{id, type};
         }
 
+        StringLiteral newLiteral(std::string literal) {
+            StringLiteral res(m_literals.size());
+            m_literals.push_back(std::move(literal));
+            return res;
+        }
+
+
         Local returnLocal() const { return Local{0, m_locals.at(0).type()}; }
         Local invalidLocal() const { return Local{INT32_MAX, types::VOID}; }
 
@@ -77,6 +84,9 @@ namespace ir {
 
         const auto& locals() const { return m_locals; }
         auto& locals() { return m_locals; }
+
+        const auto& literals() const { return m_literals; }
+        auto& literals() { return m_literals; }
 
         void printLocalMapping(std::ostream& out) const {
             out << "debug " << m_name << " {" << std::endl;
@@ -101,6 +111,8 @@ namespace ir {
 
         // Allocated on the heap to not invalidate pointers to BasicBlocks when resizing the vector
         std::vector<std::unique_ptr<BasicBlock>> m_blocks;
+
+        std::vector<std::string> m_literals;
 
         BasicBlock m_prologue;
         BasicBlock m_epilogue;

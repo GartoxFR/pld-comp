@@ -298,15 +298,37 @@ namespace ir {
         RValue m_source;
     };
 
+    class StringLiteral {
+      public:
+        explicit StringLiteral(uint32_t m_id) : m_id(m_id) {}
+
+        const auto id() const { return m_id; }
+
+        bool operator==(const StringLiteral& other) const { return m_id == other.m_id; }
+
+        std::strong_ordering operator<=>(const StringLiteral& other) const { return m_id <=> other.m_id; }
+
+        friend inline std::ostream& operator<<(std::ostream& out, const StringLiteral& self) { return out << "_literal_" << self.id(); }
+      private:
+        uint32_t m_id;
+    };
+
+    using Addressable = std::variant<Local, StringLiteral>;
+
+    inline std::ostream& operator<<(std::ostream& out, const Addressable& addr) {
+        std::visit([&](auto val) { out << val; }, addr);
+        return out;
+    }
+
     class AddressOf : public Instruction {
       public:
-        AddressOf(Local m_destination, Local m_source) : m_destination(m_destination), m_source(m_source) {}
+        AddressOf(Local m_destination, Addressable m_source) : m_destination(m_destination), m_source(m_source) {}
 
         const Local& destination() const { return m_destination; }
         Local& destination() { return m_destination; }
 
-        const Local& source() const { return m_source; }
-        Local& source() { return m_source; }
+        const Addressable& source() const { return m_source; }
+        Addressable& source() { return m_source; }
 
         void accept(Visitor& visitor) override;
 
@@ -314,7 +336,7 @@ namespace ir {
 
       private:
         Local m_destination;
-        Local m_source;
+        Addressable m_source;
     };
 }
 

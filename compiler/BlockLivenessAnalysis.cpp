@@ -1,6 +1,7 @@
 #include "BlockLivenessAnalysis.h"
 #include <algorithm>
 #include <ranges>
+#include <variant>
 
 using namespace ir;
 
@@ -77,5 +78,7 @@ void BlockLivenessAnalysisVisitor::visit(ir::PointerWrite& write) {
 }
 void BlockLivenessAnalysisVisitor::visit(ir::AddressOf& address) {
     unsetLive(address.destination());
-    setLive(address.source());
+    if (std::holds_alternative<ir::Local>(address.source())) {
+        setLive(std::get<ir::Local>(address.source()));
+    }
 }

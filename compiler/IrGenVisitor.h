@@ -17,6 +17,7 @@ class IrGenVisitor : public ifccBaseVisitor {
 
     std::any visitConst(ifccParser::ConstContext* ctx) override;
     std::any visitCharLiteral(ifccParser::CharLiteralContext *ctx) override;
+    std::any visitStringLiteral(ifccParser::StringLiteralContext *ctx) override;
     std::any visitLvalueExpr(ifccParser::LvalueExprContext *ctx) override;
 
     std::any visitBlock(ifccParser::BlockContext *ctx) override;

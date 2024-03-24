@@ -141,6 +141,7 @@ class X86GenVisitor : public ir::Visitor {
 
   private:
     std::ostream& m_out;
+    ir::Function* m_currentFunction;
 
     void loadEax(const ir::Local& local) { m_out << "    movl    " << variableLocation(local) << ", %eax\n"; }
     void loadEax(const ir::Immediate& immediate) { m_out << "    movl    $" << immediate.value32() << ", %eax\n"; }
@@ -158,6 +159,12 @@ class X86GenVisitor : public ir::Visitor {
     std::string variableLocation(const ir::Local& local) {
         std::stringstream ss;
         ss << "-" << (local.id() + 1) * 8 << "(%rbp)";
+        return ss.str();
+    }
+
+    std::string literalLabel(const ir::StringLiteral& literal) {
+        std::stringstream ss;
+        ss << "." << m_currentFunction->name() << ".literal." << literal.id();
         return ss.str();
     }
 };

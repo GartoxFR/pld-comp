@@ -79,5 +79,7 @@ void DeadCodeElimination::visit(ir::PointerWrite& write) {
 }
 void DeadCodeElimination::visit(ir::AddressOf& address) {
     unsetLive(address.destination());
-    setLive(address.source());
+    if (std::holds_alternative<ir::Local>(address.source())) {
+        setLive(std::get<ir::Local>(address.source()));
+    }
 }

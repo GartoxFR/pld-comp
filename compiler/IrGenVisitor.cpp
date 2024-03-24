@@ -146,6 +146,15 @@ std::any IrGenVisitor::visitCharLiteral(ifccParser::CharLiteralContext* ctx) {
     m_currentBlock->emit<Assignment>(res, Immediate(value, types::CHAR));
     return res;
 }
+std::any IrGenVisitor::visitStringLiteral(ifccParser::StringLiteralContext *ctx) {
+    std::string str = ctx->STRING()->getText();
+    str = str.substr(1, str.size() - 2);
+
+    StringLiteral literal = m_currentFunction->newLiteral(std::move(str));
+    Local res = m_currentFunction->newLocal(make_pointer_type(types::CHAR));
+    m_currentBlock->emit<AddressOf>(res, literal);
+    return res;
+}
 
 std::any IrGenVisitor::visitLvalueExpr(ifccParser::LvalueExprContext* ctx) {
     LValueResult lvalue = std::any_cast<LValueResult>(visit(ctx->lvalue()));

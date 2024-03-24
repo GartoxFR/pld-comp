@@ -67,7 +67,9 @@ void TwoStepAssignmentEliminationVisitor::visit(ir::PointerWrite& write) {
     variableUsed(write.address());
     variableUsed(write.source());
 }
-void TwoStepAssignmentEliminationVisitor::visit(ir::AddressOf& cast) {
-    variableAssigned(cast.destination());
-    variableUsed(cast.source());
+void TwoStepAssignmentEliminationVisitor::visit(ir::AddressOf& address) {
+    variableAssigned(address.destination());
+    if (std::holds_alternative<ir::Local>(address.source())) {
+        variableUsed(std::get<ir::Local>(address.source()));
+    }
 }
