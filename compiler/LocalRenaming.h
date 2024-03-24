@@ -15,6 +15,9 @@ class LocalRenamingVisitor : public ir::Visitor {
     void visit(ir::ConditionalJump& jump) override;
     void visit(ir::Call& call) override;
     void visit(ir::Cast& cast) override;
+    void visit(ir::PointerRead& read) override;
+    void visit(ir::PointerWrite& write) override;
+    void visit(ir::AddressOf& address) override;
 
   private:
     std::unordered_map<ir::Local, ir::Local> m_translationTable;
@@ -36,6 +39,9 @@ class LocalUsageVisitor : public ir::Visitor {
     void visit(ir::ConditionalJump& jump) override;
     void visit(ir::Call& call) override;
     void visit(ir::Cast& cast) override;
+    void visit(ir::PointerRead& read) override;
+    void visit(ir::PointerWrite& write) override;
+    void visit(ir::AddressOf& address) override;
 
     auto& usedLocal() { return m_usedLocal;}
 

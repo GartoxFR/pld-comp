@@ -45,8 +45,15 @@ void GlobalValuePropagationVisitor::visit(ir::ConditionalJump& jump) {
     }
 }
 
+void GlobalValuePropagationVisitor::visit(ir::PointerRead& read) {
+    setNotConstant(read.destination());
+}
+void GlobalValuePropagationVisitor::visit(ir::AddressOf& address) {
+    setNotConstant(address.destination());
+}
+
 void IrValuePropagationVisitor::visit(ir::Function& function) {
-    GlobalValuePropagationVisitor globalValuePropagationVisitor;
+    GlobalValuePropagationVisitor globalValuePropagationVisitor{m_pointedLocals};
     globalValuePropagationVisitor.visit(function);
     m_earlyMappings = globalValuePropagationVisitor.mappings();
 
@@ -89,4 +96,17 @@ void IrValuePropagationVisitor::visit(ir::Call& call) {
 void IrValuePropagationVisitor::visit(ir::Cast& cast) {
     trySubstitute(cast.source());
     invalidateLocal(cast.destination());
+}
+
+void IrValuePropagationVisitor::visit(ir::PointerWrite& write) {
+    trySubstitute(write.source());
+    trySubstitute(write.address());
+}
+
+void IrValuePropagationVisitor::visit(ir::PointerRead& read) {
+    trySubstitute(read.address());
+    invalidateLocal(read.destination());
+}
+void IrValuePropagationVisitor::visit(ir::AddressOf& address) {
+    invalidateLocal(address.destination());
 }

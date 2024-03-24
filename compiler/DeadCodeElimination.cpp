@@ -68,3 +68,16 @@ void DeadCodeElimination::visit(ir::Call& call) {
         setLive(arg);
     }
 }
+
+void DeadCodeElimination::visit(ir::PointerRead& read) {
+    unsetLive(read.destination());
+    setLive(read.address());
+}
+void DeadCodeElimination::visit(ir::PointerWrite& write) {
+    setLive(write.address());
+    setLive(write.source());
+}
+void DeadCodeElimination::visit(ir::AddressOf& address) {
+    unsetLive(address.destination());
+    setLive(address.source());
+}

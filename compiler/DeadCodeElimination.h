@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BlockLivenessAnalysis.h"
+#include "PointedLocalGatherer.h"
 #include "ir/Ir.h"
 #include "ir/Visitor.h"
 #include <unordered_map>
@@ -9,7 +10,9 @@
 
 class DeadCodeElimination : public ir::Visitor {
   public:
-    DeadCodeElimination(BlockLivenessAnalysis& analysis) : m_blocksLivenessAnalysis(analysis) {}
+    DeadCodeElimination(BlockLivenessAnalysis& analysis, PointedLocals& pointedLocals) :
+        m_blocksLivenessAnalysis(analysis), m_pointedLocals(pointedLocals) {}
+
     void visit(ir::Function& function) override;
     void visit(ir::BasicBlock& block) override;
     void visit(ir::BinaryOp& binaryOp) override;
@@ -18,6 +21,9 @@ class DeadCodeElimination : public ir::Visitor {
     void visit(ir::ConditionalJump& jump) override;
     void visit(ir::Call& call) override;
     void visit(ir::Cast& cast) override;
+    void visit(ir::PointerRead& read) override;
+    void visit(ir::PointerWrite& write) override;
+    void visit(ir::AddressOf& address) override;
 
     bool changed() const { return m_changed; }
 
@@ -25,6 +31,7 @@ class DeadCodeElimination : public ir::Visitor {
     std::unordered_set<ir::Local> m_workingSet;
     std::unique_ptr<ir::Instruction>* m_currentInstruction;
     BlockLivenessAnalysis& m_blocksLivenessAnalysis;
+    PointedLocals& m_pointedLocals;
     bool m_changed = false;
 
     void setLive(ir::RValue rvalue) {
@@ -42,7 +49,7 @@ class DeadCodeElimination : public ir::Visitor {
     void unsetLive(ir::Local local) { m_workingSet.erase(local); }
 
     bool tryDrop(ir::Local local) {
-        if (!m_workingSet.contains(local)) {
+        if (!m_workingSet.contains(local) && !m_pointedLocals.contains(local)) {
             *m_currentInstruction = nullptr;
             m_changed = true;
             return true;

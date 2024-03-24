@@ -66,3 +66,16 @@ void BlockLivenessAnalysisVisitor::visit(ir::Call& call) {
         setLive(arg);
     }
 }
+
+void BlockLivenessAnalysisVisitor::visit(ir::PointerRead& read) {
+    unsetLive(read.destination());
+    setLive(read.address());
+}
+void BlockLivenessAnalysisVisitor::visit(ir::PointerWrite& write) {
+    setLive(write.address());
+    setLive(write.source());
+}
+void BlockLivenessAnalysisVisitor::visit(ir::AddressOf& address) {
+    unsetLive(address.destination());
+    setLive(address.source());
+}

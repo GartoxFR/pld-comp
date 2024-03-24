@@ -57,6 +57,19 @@ void LocalRenamingVisitor::visit(ir::Cast& cast) {
     tryRename(cast.destination());
 }
 
+void LocalRenamingVisitor::visit(ir::PointerRead& read) {
+    tryRename(read.destination());
+    tryRename(read.address());
+}
+void LocalRenamingVisitor::visit(ir::PointerWrite& write) {
+    tryRename(write.source());
+    tryRename(write.address());
+}
+void LocalRenamingVisitor::visit(ir::AddressOf& address) {
+    tryRename(address.destination());
+    tryRename(address.source());
+}
+
 void LocalUsageVisitor::visit(ir::BinaryOp& binaryOp) {
     setUsed(binaryOp.destination());
     setUsed(binaryOp.left());
@@ -81,4 +94,16 @@ void LocalUsageVisitor::visit(ir::Call& call) {
 void LocalUsageVisitor::visit(ir::Cast& cast) {
     setUsed(cast.source());
     setUsed(cast.destination());
+}
+void LocalUsageVisitor::visit(ir::PointerRead& read) {
+    setUsed(read.destination());
+    setUsed(read.address());
+}
+void LocalUsageVisitor::visit(ir::PointerWrite& write) {
+    setUsed(write.source());
+    setUsed(write.address());
+}
+void LocalUsageVisitor::visit(ir::AddressOf& address) {
+    setUsed(address.destination());
+    setUsed(address.source());
 }

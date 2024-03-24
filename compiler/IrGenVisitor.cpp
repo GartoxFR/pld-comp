@@ -147,12 +147,15 @@ std::any IrGenVisitor::visitCharLiteral(ifccParser::CharLiteralContext* ctx) {
     return res;
 }
 
-std::any IrGenVisitor::visitVar(ifccParser::VarContext* ctx) {
-    std::string ident = ctx->IDENT()->getText();
-
-    // TODO: Check if variable exists and error otherwise
-
-    return m_symbolTable.getLocalVariable(ident);
+std::any IrGenVisitor::visitLvalueExpr(ifccParser::LvalueExprContext* ctx) {
+    LValueResult lvalue = std::any_cast<LValueResult>(visit(ctx->lvalue()));
+    if (!lvalue.address) {
+        return lvalue.local;
+    } else {
+        Local res = m_currentFunction->newLocal(lvalue.local.type()->target());
+        m_currentBlock->emit<PointerRead>(res, lvalue.local);
+        return res;
+    }
 }
 
 std::any IrGenVisitor::visitBlock(ifccParser::BlockContext* ctx) {
@@ -283,7 +286,7 @@ std::any IrGenVisitor::visitAssign(ifccParser::AssignContext* ctx) {
         }
 
     } else {
-        if(!lvalue.address) {
+        if (!lvalue.address) {
             auto local = lvalue.local;
             if (res.type() != local.type()) {
                 res = emitCast(res, local.type());
@@ -299,7 +302,6 @@ std::any IrGenVisitor::visitAssign(ifccParser::AssignContext* ctx) {
         }
         return res;
     }
-
 }
 
 std::any IrGenVisitor::visitSumOp(ifccParser::SumOpContext* ctx) {
@@ -356,11 +358,48 @@ std::any IrGenVisitor::visitEqOp(ifccParser::EqOpContext* ctx) {
     return visitBinaryOp(ctx->expr(0), ctx->expr(1), op, true);
 }
 
+std::any IrGenVisitor::visitPointerBinaryOp(ir::Local left, ir::Local right, ir::BinaryOpKind op) {
+    if (left.type() != right.type()) {
+        right = emitCast(right, left.type());
+    }
+
+    Local offset = m_currentFunction->newLocal(left.type());
+
+    size_t size = left.type()->target()->size();
+    // void* special case
+    if (size == 0) {
+        size = 1;
+    }
+
+    m_currentBlock->emit<BinaryOp>(offset, right, Immediate(size, left.type()), BinaryOpKind::MUL);
+
+    Local res = m_currentFunction->newLocal(left.type());
+    m_currentBlock->emit<BinaryOp>(res, left, offset, BinaryOpKind::ADD);
+
+    return res;
+}
+
 std::any IrGenVisitor::visitBinaryOp(
     ifccParser::ExprContext* left, ifccParser::ExprContext* right, ir::BinaryOpKind op, bool comp
 ) {
     Local leftRes = std::any_cast<Local>(visit(left));
     Local rightRes = std::any_cast<Local>(visit(right));
+
+    if (leftRes.type()->isPtr() && (op == BinaryOpKind::ADD || op == BinaryOpKind::SUB)) {
+        return visitPointerBinaryOp(leftRes, rightRes, op);
+    }
+
+    if (rightRes.type()->isPtr() && op == BinaryOpKind::ADD) {
+        return visitPointerBinaryOp(rightRes, leftRes, op);
+    }
+
+    if (leftRes.type()->isPtr() || rightRes.type()->isPtr()) {
+        m_error = true;
+        std::cerr << "Invalid operand types '" << leftRes.type()->name() << "' and '" << rightRes.type()->name()
+                  << "' for operator " << op << std::endl;
+
+        return m_currentFunction->invalidLocal();
+    }
 
     const Type* resType;
     if (leftRes.type() == rightRes.type()) {
@@ -371,6 +410,7 @@ std::any IrGenVisitor::visitBinaryOp(
     } else if (leftRes.type()->size() >= rightRes.type()->size()) {
         resType = leftRes.type();
         rightRes = emitCast(rightRes, resType);
+    } else {
     }
 
     if (comp) {
@@ -434,19 +474,6 @@ std::any IrGenVisitor::visitCall(ifccParser::CallContext* ctx) {
 
     m_currentBlock->emit<Call>(res, ident, args);
 
-    return res;
-}
-
-std::any IrGenVisitor::visitDeref(ifccParser::DerefContext *ctx) {
-    Local operand = std::any_cast<Local>(visit(ctx->expr()));
-    if (!operand.type()->isPtr()) {
-        m_error = true;
-        std::cerr << "Pointer dereference could not be applied on type " << operand.type()->name() << std::endl;
-        return m_currentFunction->invalidLocal();
-    }
-
-    Local res = m_currentFunction->newLocal(operand.type()->target());
-    m_currentBlock->emit<PointerRead>(res, operand);
     return res;
 }
 
@@ -572,14 +599,28 @@ std::any IrGenVisitor::visitLvalueDeref(ifccParser::LvalueDerefContext* ctx) {
 
     return LValueResult{res, true};
 }
-std::any IrGenVisitor::visitAddressOf(ifccParser::AddressOfContext *ctx) {
+std::any IrGenVisitor::visitAddressOf(ifccParser::AddressOfContext* ctx) {
     auto lvalue = std::any_cast<LValueResult>(visit(ctx->lvalue()));
 
-    if(lvalue.address) {
+    if (lvalue.address) {
         return lvalue.local;
     } else {
         Local res = m_currentFunction->newLocal(make_pointer_type(lvalue.local.type()));
         m_currentBlock->emit<AddressOf>(res, lvalue.local);
         return res;
     }
+}
+
+std::any IrGenVisitor::visitLvalueIndex(ifccParser::LvalueIndexContext* ctx) {
+    auto local = m_symbolTable.getLocalVariable(ctx->IDENT()->getText());
+
+    if (!local.type()->isPtr()) {
+        m_error = true;
+        std::cerr << "Could not index type " << local.type()->name() << std::endl;
+        return LValueResult{m_currentFunction->invalidLocal(), true};
+    }
+
+    auto right = std::any_cast<Local>(visit(ctx->expr()));
+
+    return LValueResult{std::any_cast<Local>(visitPointerBinaryOp(local, right, BinaryOpKind::ADD)), true};
 }

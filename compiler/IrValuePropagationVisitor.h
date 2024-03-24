@@ -1,5 +1,6 @@
 #pragma once
 
+#include "PointedLocalGatherer.h"
 #include "ir/Instructions.h"
 #include "ir/Ir.h"
 #include <iostream>
@@ -7,6 +8,7 @@
 
 class GlobalValuePropagationVisitor : public ir::Visitor {
   public:
+    GlobalValuePropagationVisitor(PointedLocals& pointedLocals) : m_pointedLocals(pointedLocals) {}
     using ir::Visitor::visit;
     void visit(ir::Function& function) override;
     void visit(ir::BinaryOp& binaryOp) override;
@@ -16,6 +18,8 @@ class GlobalValuePropagationVisitor : public ir::Visitor {
     void visit(ir::BasicJump& jump) override;
     void visit(ir::ConditionalJump& jump) override;
     void visit(ir::Cast& cast) override;
+    void visit(ir::PointerRead& read) override;
+    void visit(ir::AddressOf& address) override;
 
     std::unordered_map<const ir::BasicBlock*, std::unordered_map<ir::Local, ir::RValue>> mappings() {
         std::unordered_map<const ir::BasicBlock*, std::unordered_map<ir::Local, ir::RValue>> res;
@@ -36,6 +40,7 @@ class GlobalValuePropagationVisitor : public ir::Visitor {
     LocalMapping m_workingMapping;
     std::vector<ir::BasicBlock*> m_toVisit;
     ir::BasicBlock* m_currentBlock;
+    PointedLocals& m_pointedLocals;
 
     void propagate(ir::BasicBlock* target) {
         LocalMapping& sourceSet = m_localMappings[m_currentBlock].second;
@@ -82,6 +87,10 @@ class GlobalValuePropagationVisitor : public ir::Visitor {
     }
 
     void setMapping(ir::Local local, ir::RValue value) {
+        if (m_pointedLocals.contains(local) ||
+            (std::holds_alternative<ir::Local>(value) && m_pointedLocals.contains(std::get<ir::Local>(value)))) {
+            return;
+        }
         m_workingMapping.insert_or_assign(std::move(local), std::move(value));
     }
 
@@ -90,6 +99,8 @@ class GlobalValuePropagationVisitor : public ir::Visitor {
 
 class IrValuePropagationVisitor : public ir::Visitor {
   public:
+    IrValuePropagationVisitor(PointedLocals& pointedLocals) : m_pointedLocals(pointedLocals) {}
+
     using ir::Visitor::visit;
     void visit(ir::Function& function) override;
     void visit(ir::BasicBlock& block) override;
@@ -99,12 +110,14 @@ class IrValuePropagationVisitor : public ir::Visitor {
     void visit(ir::ConditionalJump& jump) override;
     void visit(ir::Call& call) override;
     void visit(ir::Cast& cast) override;
+    void visit(ir::PointerRead& read) override;
+    void visit(ir::PointerWrite& write) override;
+    void visit(ir::AddressOf& address) override;
 
-    void invalidateLocal(ir::Local local) { 
-        std::cerr << "invalidate: " << local << std::endl;
-        m_knownValues.erase(local); 
-        for (auto it = m_knownValues.begin(); it != m_knownValues.end(); ) {
-            if (ir::RValue(local) == it->second) 
+    void invalidateLocal(ir::Local local) {
+        m_knownValues.erase(local);
+        for (auto it = m_knownValues.begin(); it != m_knownValues.end();) {
+            if (ir::RValue(local) == it->second)
                 it = m_knownValues.erase(it);
             else
                 ++it;
@@ -123,6 +136,11 @@ class IrValuePropagationVisitor : public ir::Visitor {
     }
 
     void setSubstitution(ir::Local local, ir::RValue rvalue) {
+        if (m_pointedLocals.contains(local) ||
+            (std::holds_alternative<ir::Local>(rvalue) && m_pointedLocals.contains(std::get<ir::Local>(rvalue)))) {
+            return;
+        }
+
         m_knownValues.insert_or_assign(std::move(local), std::move(rvalue));
     }
 
@@ -131,5 +149,6 @@ class IrValuePropagationVisitor : public ir::Visitor {
   private:
     std::unordered_map<ir::Local, ir::RValue> m_knownValues;
     std::unordered_map<const ir::BasicBlock*, std::unordered_map<ir::Local, ir::RValue>> m_earlyMappings;
+    PointedLocals& m_pointedLocals;
     bool m_changed = false;
 };

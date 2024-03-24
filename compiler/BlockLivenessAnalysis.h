@@ -21,6 +21,9 @@ class BlockLivenessAnalysisVisitor : public ir::Visitor {
     void visit(ir::ConditionalJump& jump) override;
     void visit(ir::Call& call) override;
     void visit(ir::Cast& cast) override;
+    void visit(ir::PointerRead& read) override;
+    void visit(ir::PointerWrite& write) override;
+    void visit(ir::AddressOf& address) override;
 
     auto& blocksLiveness() {
         return m_liveMap;

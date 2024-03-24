@@ -267,8 +267,8 @@ namespace ir {
         const Local& destination() const { return m_destination; }
         Local& destination() { return m_destination; }
 
-        const Local& address() const { return m_address; }
-        Local& address() { return m_address; }
+        const RValue& address() const { return m_address; }
+        RValue& address() { return m_address; }
 
         void accept(Visitor& visitor) override;
 
@@ -276,15 +276,15 @@ namespace ir {
 
       private:
         Local m_destination;
-        Local m_address;
+        RValue m_address;
     };
 
     class PointerWrite : public Instruction {
       public:
         PointerWrite(Local m_address, RValue m_source) : m_address(m_address), m_source(m_source) {}
 
-        const Local& address() const { return m_address; }
-        Local& address() { return m_address; }
+        const RValue& address() const { return m_address; }
+        RValue& address() { return m_address; }
 
         const RValue& source() const { return m_source; }
         RValue& source() { return m_source; }
@@ -294,7 +294,7 @@ namespace ir {
         void print(std::ostream& out) const override { out << "*" << m_address << " := " << m_source; }
 
       private:
-        Local m_address;
+        RValue m_address;
         RValue m_source;
     };
 

@@ -17,7 +17,7 @@ class IrGenVisitor : public ifccBaseVisitor {
 
     std::any visitConst(ifccParser::ConstContext* ctx) override;
     std::any visitCharLiteral(ifccParser::CharLiteralContext *ctx) override;
-    std::any visitVar(ifccParser::VarContext* ctx) override;
+    std::any visitLvalueExpr(ifccParser::LvalueExprContext *ctx) override;
 
     std::any visitBlock(ifccParser::BlockContext *ctx) override;
     std::any visitIf(ifccParser::IfContext *ctx) override;
@@ -33,7 +33,6 @@ class IrGenVisitor : public ifccBaseVisitor {
     std::any visitUnaryOp(ifccParser::UnaryOpContext* ctx) override;
     std::any visitUnarySumOp(ifccParser::UnarySumOpContext* ctx) override;
     std::any visitCall(ifccParser::CallContext *ctx) override;
-    std::any visitDeref(ifccParser::DerefContext *ctx) override;
 
     std::any visitBitAnd(ifccParser::BitAndContext *ctx) override;
     std::any visitBitXor(ifccParser::BitXorContext *ctx) override;
@@ -48,6 +47,7 @@ class IrGenVisitor : public ifccBaseVisitor {
     std::any visitPar(ifccParser::ParContext* ctx) override { return visit(ctx->expr()); }
 
     std::any visitBinaryOp(ifccParser::ExprContext* left, ifccParser::ExprContext* right, ir::BinaryOpKind op, bool comp = false);
+    std::any visitPointerBinaryOp(ir::Local left, ir::Local right, ir::BinaryOpKind op);
     std::any visitUnaryOp(ifccParser::ExprContext* operand, ir::UnaryOpKind op, bool comp = false);
 
     std::any visitSimpleType(ifccParser::SimpleTypeContext *ctx) override;
@@ -55,6 +55,7 @@ class IrGenVisitor : public ifccBaseVisitor {
 
     std::any visitLvalueVar(ifccParser::LvalueVarContext *ctx) override;
     std::any visitLvalueDeref(ifccParser::LvalueDerefContext *ctx) override;
+    std::any visitLvalueIndex(ifccParser::LvalueIndexContext *ctx) override;
     std::any visitAddressOf(ifccParser::AddressOfContext *ctx) override;
 
     ir::Local emitCast(ir::Local source, const Type* targetType);

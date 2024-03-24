@@ -34,7 +34,7 @@ void TwoStepAssignmentEliminationVisitor::visit(ir::UnaryOp& unaryOp) {
 void TwoStepAssignmentEliminationVisitor::visit(ir::Assignment& assignment) {
     if (std::holds_alternative<Local>(assignment.source())) {
         Local source = std::get<Local>(assignment.source());
-        bool isTarget = !m_workingSet.contains(source);
+        bool isTarget = !m_workingSet.contains(source) && !m_pointedLocals.contains(source);
         variableAssigned(assignment.destination());
         variableUsed(source);
         if (isTarget) {
@@ -55,6 +55,19 @@ void TwoStepAssignmentEliminationVisitor::visit(ir::Call& call) {
 }
 
 void TwoStepAssignmentEliminationVisitor::visit(ir::Cast& cast) {
+    variableAssigned(cast.destination());
+    variableUsed(cast.source());
+}
+
+void TwoStepAssignmentEliminationVisitor::visit(ir::PointerRead& read) {
+    variableAssigned(read.destination());
+    variableUsed(read.address());
+}
+void TwoStepAssignmentEliminationVisitor::visit(ir::PointerWrite& write) {
+    variableUsed(write.address());
+    variableUsed(write.source());
+}
+void TwoStepAssignmentEliminationVisitor::visit(ir::AddressOf& cast) {
     variableAssigned(cast.destination());
     variableUsed(cast.source());
 }
