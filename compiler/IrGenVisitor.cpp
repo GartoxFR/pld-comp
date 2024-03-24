@@ -10,6 +10,7 @@ static std::unique_ptr<Function> PUTCHAR;
 static std::unique_ptr<Function> GETCHAR;
 static std::unique_ptr<Function> MALLOC;
 static std::unique_ptr<Function> FREE;
+static std::unique_ptr<Function> PRINTF;
 
 struct LValueResult {
     ir::Local local;
@@ -21,11 +22,13 @@ IrGenVisitor::IrGenVisitor() {
     GETCHAR = std::unique_ptr<Function>(new Function("getchar", {}, types::INT));
     MALLOC = std::unique_ptr<Function>(new Function("malloc", {types::LONG}, make_pointer_type(types::VOID)));
     FREE = std::unique_ptr<Function>(new Function("free", {make_pointer_type(types::VOID)}, types::VOID));
+    PRINTF = std::unique_ptr<Function>(new Function("printf", {make_pointer_type(types::CHAR)}, types::INT, true));
 
     m_symbolTable.declareFunction(*PUTCHAR);
     m_symbolTable.declareFunction(*GETCHAR);
     m_symbolTable.declareFunction(*MALLOC);
     m_symbolTable.declareFunction(*FREE);
+    m_symbolTable.declareFunction(*PRINTF);
 }
 
 std::any IrGenVisitor::visitFunction(ifccParser::FunctionContext* ctx) {
@@ -470,18 +473,20 @@ std::any IrGenVisitor::visitCall(ifccParser::CallContext* ctx) {
     Local res = m_currentFunction->newLocal(function->returnLocal().type());
     std::vector<RValue> args;
     args.reserve(ctx->expr().size());
-    int i = 1;
+    size_t i = 1;
     for (auto& arg : ctx->expr()) {
-        auto argType = function->locals()[i].type();
         Local local = std::any_cast<Local>(visit(arg));
-        if (local.type() != argType) {
-            local = emitCast(local, argType);
+        if (i <= function->argCount()) {
+            auto argType = function->locals()[i].type();
+            if (local.type() != argType) {
+                local = emitCast(local, argType);
+            }
         }
         args.push_back(local);
         ++i;
     }
 
-    m_currentBlock->emit<Call>(res, ident, args);
+    m_currentBlock->emit<Call>(res, ident, args, function->variadic());
 
     return res;
 }

@@ -12,6 +12,8 @@ static constexpr Register CALL_REGISTER[] = {
     Register::RSI,
     Register::RDX,
     Register::RCX,
+    Register::R8,
+    Register::R9,
 };
 
 void X86GenVisitor::visit(ir::Function& function) {
@@ -90,7 +92,7 @@ void X86GenVisitor::emitDiv(bool modulo, const ir::BinaryOp& binaryOp) {
     auto size = type->size();
     SizedRegister rax = {Register::RAX, size};
     SizedRegister rdx = {Register::RDX, size};
-    SizedRegister rbx = {Register::RBX, size};
+    SizedRegister rcx = {Register::RCX, size};
     auto suffix = getSuffix(size);
     emit("mov", suffix, binaryOp.left(), rax);
 
@@ -107,8 +109,8 @@ void X86GenVisitor::emitDiv(bool modulo, const ir::BinaryOp& binaryOp) {
         emit("idiv", suffix, rightLocal);
     } else {
         Immediate rightImmediate = std::get<Immediate>(binaryOp.right());
-        emit("mov", suffix, rightImmediate, rbx);
-        emit("idiv", suffix, rbx);
+        emit("mov", suffix, rightImmediate, rcx);
+        emit("idiv", suffix, rcx);
     }
 
     if (modulo) {
@@ -192,6 +194,9 @@ void X86GenVisitor::visit(ir::Call& call) {
         emit("mov", suffix, arg, reg);
     }
 
+    if (call.variadic()) {
+        emit("movq", Immediate(0, types::LONG), SizedRegister(Register::RAX, 8));
+    }
 
     emit("call", Label(call.name()));
     if (call.destination().type()->size() > 0) {
@@ -228,6 +233,7 @@ void X86GenVisitor::visit(ir::PointerRead& pointerRead) {
     emit("mov", suffix, Deref(rdx), rax);
     emit("mov", suffix, rax, pointerRead.destination());
 }
+
 void X86GenVisitor::visit(ir::PointerWrite& pointerWrite) {
     auto type = std::visit([](auto val) { return val.type(); }, pointerWrite.source());
     SizedRegister rax{Register::RAX, type->size()};
@@ -238,6 +244,7 @@ void X86GenVisitor::visit(ir::PointerWrite& pointerWrite) {
     emit("mov", suffix, pointerWrite.source(), rax);
     emit("mov", suffix, rax, Deref(rdx));
 }
+
 void X86GenVisitor::visit(ir::AddressOf& addressOf) {
     SizedRegister rax = {Register::RAX, 8};
     if (std::holds_alternative<Local>(addressOf.source())) {

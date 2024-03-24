@@ -61,7 +61,7 @@ class IrSymbolTable {
             return false;
         }
 
-        if (it->second->argCount() != argCount) {
+        if (it->second->argCount() != argCount && !(it->second->variadic() && it->second->argCount() <= argCount)) {
             m_error = true;
             return false;
         }

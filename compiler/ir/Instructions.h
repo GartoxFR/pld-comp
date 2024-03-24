@@ -208,8 +208,8 @@ namespace ir {
 
     class Call : public Instruction {
       public:
-        Call(const Local& destination, std::string name, std::vector<RValue> args) :
-            Instruction(), m_destination(destination), m_name(std::move(name)), m_args(std::move(args)) {}
+        Call(const Local& destination, std::string name, std::vector<RValue> args, bool variadic = false) :
+            Instruction(), m_destination(destination), m_name(std::move(name)), m_args(std::move(args)), m_variadic(variadic) {}
 
         void print(std::ostream& out) const override {
             out << m_destination << " := " << m_name << "(";
@@ -231,12 +231,15 @@ namespace ir {
         const auto& args() const { return m_args; }
         auto& args() { return m_args; }
 
+        bool variadic() const { return m_variadic; }
+
         void accept(Visitor& visitor) override;
 
       private:
         Local m_destination;
         std::string m_name;
         std::vector<RValue> m_args;
+        bool m_variadic;
     };
 
     class Cast : public Instruction {

@@ -33,8 +33,12 @@ namespace ir {
             m_name(name), m_argCount(argCount), m_locals({LocalInfo(returnType)}),
             m_prologue(generatePrologueLabel(name)), m_epilogue(generateEpilogueLabel(name)) {}
 
-        Function(const std::string& name, std::initializer_list<const Type*> argTypes, const Type* returnType) :
-            m_name(name), m_argCount(argTypes.size()), m_prologue(generatePrologueLabel(name)),
+        Function(
+            const std::string& name, std::initializer_list<const Type*> argTypes, const Type* returnType,
+            bool variadic = false
+        ) :
+            m_name(name),
+            m_argCount(argTypes.size()), m_variadic(variadic), m_prologue(generatePrologueLabel(name)),
             m_epilogue(generateEpilogueLabel(name)) {
             m_locals.emplace_back(returnType);
             std::transform(std::begin(argTypes), std::end(argTypes), std::back_inserter(m_locals), [](auto type) {
@@ -71,11 +75,12 @@ namespace ir {
             return res;
         }
 
-
         Local returnLocal() const { return Local{0, m_locals.at(0).type()}; }
         Local invalidLocal() const { return Local{INT32_MAX, types::VOID}; }
 
         const auto& name() const { return m_name; }
+
+        bool variadic() const { return m_variadic; }
 
         size_t argCount() const { return m_argCount; }
 
@@ -113,6 +118,8 @@ namespace ir {
         std::vector<std::unique_ptr<BasicBlock>> m_blocks;
 
         std::vector<std::string> m_literals;
+
+        bool m_variadic = false;
 
         BasicBlock m_prologue;
         BasicBlock m_epilogue;
