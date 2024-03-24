@@ -519,8 +519,19 @@ std::any IrGenVisitor::visitPreIncrDecrOp(ifccParser::PreIncrDecrOpContext* ctx)
         op = BinaryOpKind::SUB;
     }
 
-    Local res = std::any_cast<Local>(visit(ctx->expr()));
-    m_currentBlock->emit<BinaryOp>(res, res, Immediate(1, res.type()), op);
+    LValueResult res = std::any_cast<LValueResult>(visit(ctx->lvalue()));
+    if (!res.address) {
+        m_currentBlock->emit<BinaryOp>(res.local, res.local, Immediate(1, res.local.type()), op);
+
+        return res.local;
+    } else {
+        Local result = m_currentFunction->newLocal(res.local.type()->target());
+        m_currentBlock->emit<PointerRead>(result, res.local);
+        m_currentBlock->emit<BinaryOp>(result, result, Immediate(1, result.type()), op);
+        m_currentBlock->emit<PointerWrite>(res.local, result);
+
+        return result;
+    }
     return res;
 }
 
@@ -534,11 +545,23 @@ std::any IrGenVisitor::visitPostIncrDecrOp(ifccParser::PostIncrDecrOpContext* ct
         op = BinaryOpKind::SUB;
     }
 
-    Local res = std::any_cast<Local>(visit(ctx->expr()));
-    Local temp = m_currentFunction->newLocal(res.type());
-    m_currentBlock->emit<Assignment>(temp, res);
-    m_currentBlock->emit<BinaryOp>(res, res, Immediate(1, res.type()), op);
-    return temp;
+    LValueResult res = std::any_cast<LValueResult>(visit(ctx->lvalue()));
+    if (!res.address) {
+        Local temp = m_currentFunction->newLocal(res.local.type());
+        m_currentBlock->emit<Assignment>(temp, res.local);
+        m_currentBlock->emit<BinaryOp>(res.local, res.local, Immediate(1, res.local.type()), op);
+
+        return temp;
+    } else {
+        Local temp = m_currentFunction->newLocal(res.local.type()->target());
+        m_currentBlock->emit<PointerRead>(temp, res.local);
+        Local result = m_currentFunction->newLocal(temp.type());
+        m_currentBlock->emit<BinaryOp>(result, temp, Immediate(1, result.type()), op);
+        m_currentBlock->emit<PointerWrite>(res.local, result);
+
+        return temp;
+    }
+    
 }
 
 std::any IrGenVisitor::visitLogicalOr(ifccParser::LogicalOrContext* ctx) {
