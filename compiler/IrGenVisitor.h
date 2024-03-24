@@ -33,6 +33,7 @@ class IrGenVisitor : public ifccBaseVisitor {
     std::any visitUnaryOp(ifccParser::UnaryOpContext* ctx) override;
     std::any visitUnarySumOp(ifccParser::UnarySumOpContext* ctx) override;
     std::any visitCall(ifccParser::CallContext *ctx) override;
+    std::any visitDeref(ifccParser::DerefContext *ctx) override;
 
     std::any visitBitAnd(ifccParser::BitAndContext *ctx) override;
     std::any visitBitXor(ifccParser::BitXorContext *ctx) override;
@@ -52,11 +53,15 @@ class IrGenVisitor : public ifccBaseVisitor {
     std::any visitSimpleType(ifccParser::SimpleTypeContext *ctx) override;
     std::any visitPointerType(ifccParser::PointerTypeContext *ctx) override;
 
+    std::any visitLvalueVar(ifccParser::LvalueVarContext *ctx) override;
+    std::any visitLvalueDeref(ifccParser::LvalueDerefContext *ctx) override;
+    std::any visitAddressOf(ifccParser::AddressOfContext *ctx) override;
+
     ir::Local emitCast(ir::Local source, const Type* targetType);
 
     const auto& functions() const { return m_functions; }
 
-    bool hasErrors() const { return m_symbolTable.hasErrors() || error; }
+    bool hasErrors() const { return m_symbolTable.hasErrors() || m_error; }
 
   private:
     std::vector<std::unique_ptr<ir::Function>> m_functions;
@@ -64,5 +69,5 @@ class IrGenVisitor : public ifccBaseVisitor {
     ir::BasicBlock* m_currentBlock;
     IrSymbolTable m_symbolTable;
     std::vector<std::pair<ir::BasicBlock*, ir::BasicBlock*>> m_breakableScopes; // (breakBlock, continueBlock)
-    bool error = false;
+    bool m_error = false;
 };

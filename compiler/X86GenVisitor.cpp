@@ -19,7 +19,7 @@ void X86GenVisitor::visit(ir::Function& function) {
     m_out << function.name() << ":\n";
     m_out << "    pushq   %rbp\n";
     m_out << "    movq    %rsp, %rbp\n";
-    m_out << "    subq    $" << function.locals().size() * 4 << ", %rsp\n";
+    m_out << "    subq    $" << function.locals().size() * 8 << ", %rsp\n";
 
     for (size_t i = 0; i < function.argCount(); i++) {
         auto type = function.locals()[i + 1].type();
@@ -34,7 +34,7 @@ void X86GenVisitor::visit(ir::Function& function) {
         visit(*block);
     }
     visit(*function.epilogue());
-    SizedRegister rax {Register::RAX, function.returnLocal().type()->size()};
+    SizedRegister rax{Register::RAX, function.returnLocal().type()->size()};
     auto suffix = getSuffix(function.returnLocal().type()->size());
     emit("mov", suffix, function.returnLocal(), rax);
 
@@ -120,9 +120,9 @@ void X86GenVisitor::visit(ir::BinaryOp& binaryOp) {
         case BinaryOpKind::CMP_G: emitCmp("setg", binaryOp); break;
         case BinaryOpKind::CMP_LE: emitCmp("setle", binaryOp); break;
         case BinaryOpKind::CMP_GE: emitCmp("setge", binaryOp); break;
-        case BinaryOpKind::BIT_AND: emitSimpleArithmetic("and ", binaryOp); break;
-        case BinaryOpKind::BIT_XOR: emitSimpleArithmetic("xor ", binaryOp); break;
-        case BinaryOpKind::BIT_OR: emitSimpleArithmetic("or ", binaryOp); break;
+        case BinaryOpKind::BIT_AND: emitSimpleArithmetic("and", binaryOp); break;
+        case BinaryOpKind::BIT_XOR: emitSimpleArithmetic("xor", binaryOp); break;
+        case BinaryOpKind::BIT_OR: emitSimpleArithmetic("or", binaryOp); break;
     }
 }
 
@@ -135,7 +135,7 @@ void X86GenVisitor::visit(ir::UnaryOp& unaryOp) {
     SizedRegister destRegister = rax;
     emit("mov", suffix, unaryOp.operand(), rax);
     switch (unaryOp.operation()) {
-        case UnaryOpKind::MINUS: emit("neg", suffix, rax);
+        case UnaryOpKind::MINUS: emit("neg", suffix, rax); break;
 
         case UnaryOpKind::NOT:
             emit("test", rax, rax);
@@ -181,8 +181,14 @@ void X86GenVisitor::visit(ir::Call& call) {
         emit("mov", suffix, arg, reg);
     }
 
-    m_out << "    call    " << call.name() << "\n";
-    saveEax(call.destination());
+
+    emit("call", Label(call.name()));
+    if (call.destination().type()->size() > 0) {
+        SizedRegister rax = {Register::RAX, call.destination().type()->size()};
+        auto suffix = getSuffix(rax.size);
+        emit("mov", suffix, rax, call.destination());
+    }
+
 }
 
 void X86GenVisitor::visit(ir::Cast& cast) {
@@ -199,4 +205,30 @@ void X86GenVisitor::visit(ir::Cast& cast) {
         emit("mov", suffix, cast.source(), rax);
         emit("mov", suffix, rax, cast.destination());
     }
+}
+
+void X86GenVisitor::visit(ir::PointerRead& pointerRead) {
+    auto type = pointerRead.destination().type();
+    SizedRegister rax{Register::RAX, type->size()};
+    SizedRegister rdx{Register::RDX, 8};
+    auto suffix = getSuffix(rax.size);
+
+    emit("movq", pointerRead.address(), rdx);
+    emit("mov", suffix, Deref(rdx), rax);
+    emit("mov", suffix, rax, pointerRead.destination());
+}
+void X86GenVisitor::visit(ir::PointerWrite& pointerWrite) {
+    auto type = std::visit([](auto val) { return val.type(); }, pointerWrite.source());
+    SizedRegister rax{Register::RAX, type->size()};
+    SizedRegister rdx{Register::RDX, 8};
+    auto suffix = getSuffix(rax.size);
+
+    emit("movq", pointerWrite.address(), rdx);
+    emit("mov", suffix, pointerWrite.source(), rax);
+    emit("mov", suffix, rax, Deref(rdx));
+}
+void X86GenVisitor::visit(ir::AddressOf& addressOf) {
+    SizedRegister rax = {Register::RAX, 8};
+    emit("leaq", addressOf.source(), rax);
+    emit("movq", rax, addressOf.destination());
 }

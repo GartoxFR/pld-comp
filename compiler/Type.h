@@ -7,10 +7,11 @@
 class Type {
   public:
     Type(std::string name, size_t size) : m_size(size), m_target(nullptr), m_name(std::move(name)) {}
-    Type(std::string name, const Type* target) : m_size(64), m_target(target), m_name(std::move(name)) {}
+    Type(std::string name, const Type* target) : m_size(8), m_target(target), m_name(std::move(name)) {}
 
     bool isPtr() const { return m_target != nullptr; }
     size_t size() const { return m_size; }
+    auto target() const { return m_target; }
     const auto& name() const { return m_name; }
 
   private:

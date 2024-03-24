@@ -8,13 +8,24 @@ using namespace ir;
 
 static std::unique_ptr<Function> PUTCHAR;
 static std::unique_ptr<Function> GETCHAR;
+static std::unique_ptr<Function> MALLOC;
+static std::unique_ptr<Function> FREE;
+
+struct LValueResult {
+    ir::Local local;
+    bool address; // Wether local should be consider as an address or not
+};
 
 IrGenVisitor::IrGenVisitor() {
     PUTCHAR = std::unique_ptr<Function>(new Function("putchar", {types::INT}, types::INT));
     GETCHAR = std::unique_ptr<Function>(new Function("getchar", {}, types::INT));
+    MALLOC = std::unique_ptr<Function>(new Function("malloc", {types::LONG}, make_pointer_type(types::VOID)));
+    FREE = std::unique_ptr<Function>(new Function("free", {make_pointer_type(types::VOID)}, types::VOID));
 
     m_symbolTable.declareFunction(*PUTCHAR);
     m_symbolTable.declareFunction(*GETCHAR);
+    m_symbolTable.declareFunction(*MALLOC);
+    m_symbolTable.declareFunction(*FREE);
 }
 
 std::any IrGenVisitor::visitFunction(ifccParser::FunctionContext* ctx) {
@@ -71,7 +82,7 @@ std::any IrGenVisitor::visitReturn_stmt(ifccParser::Return_stmtContext* ctx) {
 }
 std::any IrGenVisitor::visitBreak(ifccParser::BreakContext* ctx) {
     if (m_breakableScopes.empty()) {
-        error = true;
+        m_error = true;
         std::cerr << "Error: Break not in a loop";
         return 0;
     }
@@ -89,7 +100,7 @@ std::any IrGenVisitor::visitBreak(ifccParser::BreakContext* ctx) {
 
 std::any IrGenVisitor::visitContinue(ifccParser::ContinueContext* ctx) {
     if (m_breakableScopes.empty()) {
-        error = true;
+        m_error = true;
         std::cerr << "Error: Continue not in a loop";
         return 0;
     }
@@ -227,8 +238,7 @@ std::any IrGenVisitor::visitDeclare_stmt(ifccParser::Declare_stmtContext* ctx) {
 }
 
 std::any IrGenVisitor::visitAssign(ifccParser::AssignContext* ctx) {
-    std::string ident = ctx->IDENT()->getText();
-    Local local = m_symbolTable.getLocalVariable(ident);
+    LValueResult lvalue = std::any_cast<LValueResult>(visit(ctx->lvalue()));
     Local res = std::any_cast<Local>(visit(ctx->expr()));
 
     if (ctx->ASSIGN_OP()) {
@@ -254,21 +264,42 @@ std::any IrGenVisitor::visitAssign(ifccParser::AssignContext* ctx) {
             op = BinaryOpKind::BIT_OR;
         }
 
-        if (res.type() != local.type()) {
-            // TODO: Check if this is right semantic
-            res = emitCast(res, local.type());
-        }
+        if (!lvalue.address) {
+            auto local = lvalue.local;
+            if (res.type() != local.type()) {
+                // TODO: Check if this is right semantic
+                res = emitCast(res, local.type());
+            }
 
-        m_currentBlock->emit<BinaryOp>(local, local, res, op);
+            m_currentBlock->emit<BinaryOp>(local, local, res, op);
+            return local;
+        } else {
+            auto local = m_currentFunction->newLocal(lvalue.local.type()->target());
+            m_currentBlock->emit<PointerRead>(local, lvalue.local);
+            m_currentBlock->emit<BinaryOp>(local, local, res, op);
+            m_currentBlock->emit<PointerWrite>(lvalue.local, local);
+
+            return local;
+        }
 
     } else {
-        if (res.type() != local.type()) {
-            res = emitCast(res, local.type());
+        if(!lvalue.address) {
+            auto local = lvalue.local;
+            if (res.type() != local.type()) {
+                res = emitCast(res, local.type());
+            }
+            m_currentBlock->emit<Assignment>(local, res);
+        } else {
+            auto type = lvalue.local.type()->target();
+            if (res.type() != type) {
+                res = emitCast(res, type);
+            }
+
+            m_currentBlock->emit<PointerWrite>(lvalue.local, res);
         }
-        m_currentBlock->emit<Assignment>(local, res);
+        return res;
     }
 
-    return local;
 }
 
 std::any IrGenVisitor::visitSumOp(ifccParser::SumOpContext* ctx) {
@@ -406,6 +437,19 @@ std::any IrGenVisitor::visitCall(ifccParser::CallContext* ctx) {
     return res;
 }
 
+std::any IrGenVisitor::visitDeref(ifccParser::DerefContext *ctx) {
+    Local operand = std::any_cast<Local>(visit(ctx->expr()));
+    if (!operand.type()->isPtr()) {
+        m_error = true;
+        std::cerr << "Pointer dereference could not be applied on type " << operand.type()->name() << std::endl;
+        return m_currentFunction->invalidLocal();
+    }
+
+    Local res = m_currentFunction->newLocal(operand.type()->target());
+    m_currentBlock->emit<PointerRead>(res, operand);
+    return res;
+}
+
 std::any IrGenVisitor::visitBitAnd(ifccParser::BitAndContext* ctx) {
     BinaryOpKind op = BinaryOpKind::BIT_AND;
 
@@ -509,4 +553,33 @@ ir::Local IrGenVisitor::emitCast(ir::Local source, const Type* targetType) {
     Local res = m_currentFunction->newLocal(targetType);
     m_currentBlock->emit<Cast>(res, source);
     return res;
+}
+
+std::any IrGenVisitor::visitLvalueVar(ifccParser::LvalueVarContext* ctx) {
+    std::string ident = ctx->IDENT()->getText();
+
+    // TODO: Check if variable exists and error otherwise
+
+    return LValueResult{m_symbolTable.getLocalVariable(ident), false};
+}
+std::any IrGenVisitor::visitLvalueDeref(ifccParser::LvalueDerefContext* ctx) {
+    auto res = std::any_cast<Local>(visit(ctx->expr()));
+    if (!res.type()->isPtr()) {
+        m_error = true;
+        std::cerr << "Pointer dereference could not be applied on type " << res.type()->name() << std::endl;
+        return LValueResult{m_currentFunction->invalidLocal(), true};
+    }
+
+    return LValueResult{res, true};
+}
+std::any IrGenVisitor::visitAddressOf(ifccParser::AddressOfContext *ctx) {
+    auto lvalue = std::any_cast<LValueResult>(visit(ctx->lvalue()));
+
+    if(lvalue.address) {
+        return lvalue.local;
+    } else {
+        Local res = m_currentFunction->newLocal(make_pointer_type(lvalue.local.type()));
+        m_currentBlock->emit<AddressOf>(res, lvalue.local);
+        return res;
+    }
 }

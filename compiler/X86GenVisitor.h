@@ -28,6 +28,14 @@ struct SizedRegister {
     size_t size;
 };
 
+struct Deref {
+    SizedRegister reg;
+};
+
+struct Label {
+    std::string_view label;
+};
+
 inline const std::string_view REGISTER_ALIASES[16][4]{
     {"%rax", "%eax", "%ax", "%al"},      {"%rbx", "%ebx", "%bx", "%bl"},      {"%rcx", "%ecx", "%cx", "%cl"},
     {"%rdx", "%edx", "%dx", "%dl"},      {"%rsi", "%esi", "%si", "%sil"},      {"%rdi", "%edi", "%di", "%dil"},
@@ -70,6 +78,9 @@ class X86GenVisitor : public ir::Visitor {
     void visit(ir::ConditionalJump& jump) override;
     void visit(ir::Call& call) override;
     void visit(ir::Cast& cast) override;
+    void visit(ir::PointerRead& pointerRead) override;
+    void visit(ir::PointerWrite& pointerWrite) override;
+    void visit(ir::AddressOf& addressOf) override;
 
     void emitSimpleArithmetic(std::string_view instr, const ir::BinaryOp& binaryOp);
     void emitCmp(std::string_view instruction, const ir::BinaryOp& binaryOp);
@@ -77,14 +88,14 @@ class X86GenVisitor : public ir::Visitor {
 
     template <class... Ts>
     void emit(std::string_view instr, std::string_view suffix, Ts&&... args) {
-        m_out << "    " << instr << suffix << " ";
+        m_out << "    " << instr << suffix << "\t";
         emitArgs(args...);
         m_out << "\n";
     }
 
     template <class... Ts>
     void emit(std::string_view instr, Ts&&... args) {
-        m_out << "    " << instr << " ";
+        m_out << "    " << instr << "\t";
         if constexpr (sizeof...(Ts))
             emitArgs(args...);
         m_out << "\n";
@@ -124,6 +135,10 @@ class X86GenVisitor : public ir::Visitor {
 
     void emitArg(const SizedRegister& arg) { m_out << registerLabel(arg); }
 
+    void emitArg(const Deref& arg) { m_out << "(" << registerLabel(arg.reg) << ")"; }
+
+    void emitArg(const Label& arg) { m_out << arg.label; }
+
   private:
     std::ostream& m_out;
 
@@ -142,7 +157,7 @@ class X86GenVisitor : public ir::Visitor {
 
     std::string variableLocation(const ir::Local& local) {
         std::stringstream ss;
-        ss << "-" << (local.id() + 1) * 4 << "(%rbp)";
+        ss << "-" << (local.id() + 1) * 8 << "(%rbp)";
         return ss.str();
     }
 };

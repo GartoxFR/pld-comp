@@ -66,6 +66,7 @@ namespace ir {
         }
 
         Local returnLocal() const { return Local{0, m_locals.at(0).type()}; }
+        Local invalidLocal() const { return Local{INT32_MAX, types::VOID}; }
 
         const auto& name() const { return m_name; }
 

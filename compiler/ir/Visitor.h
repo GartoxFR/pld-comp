@@ -37,6 +37,9 @@ namespace ir {
         virtual void visit(Assignment&) {}
         virtual void visit(Call&) {}
         virtual void visit(Cast&) {}
+        virtual void visit(PointerRead&) {}
+        virtual void visit(PointerWrite&) {}
+        virtual void visit(AddressOf&) {}
 
         //  Terminators
         virtual void visit(BasicJump&) {}

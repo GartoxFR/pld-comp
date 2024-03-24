@@ -24,6 +24,7 @@ initializer : IDENT ('=' expr | ) ;
 expr: IDENT '(' (expr (',' expr)*)? ')' # call
     | SUM_OP expr # unarySumOp
     | UNARY_OP expr # unaryOp
+    | BIT_AND lvalue # addressOf
     | INCRDECR_OP expr # preIncrDecrOp
     | expr INCRDECR_OP # postIncrDecrOp
     | expr (STAR | PRODUCT_OP) expr # productOp
@@ -35,12 +36,17 @@ expr: IDENT '(' (expr (',' expr)*)? ')' # call
     | expr BIT_OR expr # bitOr
     | expr LOGICAL_AND expr # logicalAnd
     | expr LOGICAL_OR expr # logicalOr
-    | IDENT ('=' | ASSIGN_OP) expr # assign
+    | lvalue ('=' | ASSIGN_OP) expr # assign
+    | STAR expr # deref
     | CONST # const
     | CHAR  # charLiteral
     | IDENT # var 
     | '(' expr ')' # par
     ;
+
+lvalue: IDENT # lvalueVar
+      | STAR expr # lvalueDeref
+      ;
 
 return_stmt: RETURN expr? ';' ;
 
