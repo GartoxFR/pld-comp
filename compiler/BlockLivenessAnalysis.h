@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BlockDependance.h"
+#include "InterferenceGraph.h"
 #include "ir/Ir.h"
 #include <unordered_set>
 
@@ -11,7 +12,8 @@ class BlockLivenessAnalysisVisitor : public ir::Visitor {
   public:
     using ir::Visitor::visit;
 
-    BlockLivenessAnalysisVisitor(DependanceMap& dependanceMap) : m_dependanceMap(dependanceMap) {}
+    BlockLivenessAnalysisVisitor(DependanceMap& dependanceMap, InterferenceGraph* interferenceGraph = nullptr) :
+        m_dependanceMap(dependanceMap), m_interferenceGraph(interferenceGraph) {}
 
     void visit(ir::Function& function) override;
     void visit(ir::BasicBlock& block) override;
@@ -25,28 +27,32 @@ class BlockLivenessAnalysisVisitor : public ir::Visitor {
     void visit(ir::PointerWrite& write) override;
     void visit(ir::AddressOf& address) override;
 
-    auto& blocksLiveness() {
-        return m_liveMap;
-    }
+    auto& blocksLiveness() { return m_liveMap; }
 
   private:
-
     BlockLivenessAnalysis m_liveMap;
     DependanceMap& m_dependanceMap;
+    InterferenceGraph* m_interferenceGraph;
 
     LiveSet m_workingSet;
 
     void setLive(ir::RValue rvalue) {
         if (std::holds_alternative<ir::Local>(rvalue))
-            m_workingSet.insert(std::get<ir::Local>(rvalue));
+            setLive(std::get<ir::Local>(rvalue));
     }
 
     void unsetLive(ir::RValue rvalue) {
         if (std::holds_alternative<ir::Local>(rvalue))
-            m_workingSet.erase(std::get<ir::Local>(rvalue));
+            unsetLive(std::get<ir::Local>(rvalue));
     }
 
-    void setLive(ir::Local local) { m_workingSet.insert(local); }
+    void setLive(ir::Local local) {
+        if (m_workingSet.insert(local).second && m_interferenceGraph) {
+            for (const auto& other : m_workingSet) {
+                m_interferenceGraph->addInterference(local.id(), other.id());
+            }
+        }
+    }
 
     void unsetLive(ir::Local local) { m_workingSet.erase(local); }
 
@@ -56,7 +62,13 @@ class BlockLivenessAnalysisVisitor : public ir::Visitor {
 
         bool changed = false;
         for (auto local : sourceSet) {
-            changed |= targetSet.insert(local).second;
+            bool inserted = targetSet.insert(local).second;
+            changed |= inserted;
+            if (inserted && m_interferenceGraph) {
+                for (const auto& other : targetSet) {
+                    m_interferenceGraph->addInterference(local.id(), other.id());
+                }
+            }
         }
 
         return changed;
@@ -75,8 +87,10 @@ class BlockLivenessAnalysisVisitor : public ir::Visitor {
     }
 };
 
-inline BlockLivenessAnalysis computeBlockLivenessAnalysis(ir::Function& function, DependanceMap& dependanceMap) {
-    BlockLivenessAnalysisVisitor visitor{dependanceMap};
+inline BlockLivenessAnalysis computeBlockLivenessAnalysis(
+    ir::Function& function, DependanceMap& dependanceMap, InterferenceGraph* interferenceGraph = nullptr
+) {
+    BlockLivenessAnalysisVisitor visitor{dependanceMap, interferenceGraph};
     visitor.visit(function);
 
     auto analysis = std::move(visitor.blocksLiveness());

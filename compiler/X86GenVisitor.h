@@ -3,6 +3,14 @@
 #include "ir/Instructions.h"
 #include "ir/Ir.h"
 #include <ostream>
+#include <unordered_map>
+
+template <class... Ts>
+struct overloaded : Ts... {
+    using Ts::operator()...;
+};
+template <class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
 
 enum class Register : uint8_t {
     RAX = 0,
@@ -83,6 +91,7 @@ class X86GenVisitor : public ir::Visitor {
     void visit(ir::AddressOf& addressOf) override;
 
     void emitSimpleArithmetic(std::string_view instr, const ir::BinaryOp& binaryOp);
+    void emitSimpleArithmeticCommutative(std::string_view instr, const ir::BinaryOp& binaryOp);
     void emitCmp(std::string_view instruction, const ir::BinaryOp& binaryOp);
     void emitDiv(bool modulo, const ir::BinaryOp& binaryOp);
 
@@ -142,6 +151,8 @@ class X86GenVisitor : public ir::Visitor {
   private:
     std::ostream& m_out;
     ir::Function* m_currentFunction;
+    std::unordered_map<ir::Local, Register> m_localsInRegister;
+    std::unordered_map<ir::Local, size_t> m_localsOnStack;
 
     void loadEax(const ir::Local& local) { m_out << "    movl    " << variableLocation(local) << ", %eax\n"; }
     void loadEax(const ir::Immediate& immediate) { m_out << "    movl    $" << immediate.value32() << ", %eax\n"; }
@@ -158,8 +169,33 @@ class X86GenVisitor : public ir::Visitor {
 
     std::string variableLocation(const ir::Local& local) {
         std::stringstream ss;
-        ss << "-" << (local.id() + 1) * 8 << "(%rbp)";
+        auto it = m_localsInRegister.find(local);
+        if (it != m_localsInRegister.end()) {
+            ss << registerLabel(SizedRegister {it->second, local.type()->size()});
+        } else {
+            ss << "-" <<  m_localsOnStack.at(local) << "(%rbp)";
+        }
+
         return ss.str();
+    }
+
+    std::optional<Register> variableRegister(const ir::Local& local) {
+        auto it = m_localsInRegister.find(local);
+        if (it != m_localsInRegister.end()) {
+            return it->second;
+        }
+
+        return {};
+    }
+
+    std::optional<Register> rvalueRegister(const ir::RValue& rvalue) {
+        return std::visit(
+                overloaded{
+                    [&](ir::Local local) { return variableRegister(local); },
+                    [&](auto unused) { return std::optional<Register>{}; },
+                },
+               rvalue
+            );
     }
 
     std::string literalLabel(const ir::StringLiteral& literal) {

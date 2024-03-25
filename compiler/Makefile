@@ -33,6 +33,8 @@ OBJECTS=build/ifccBaseVisitor.o \
 	build/TwoStepAssignmentElimination.o \
 	build/LocalRenaming.o \
 	build/BlockReordering.o \
+	build/RegisterAllocation.o \
+	build/InterferenceGraph.o \
 	build/ir/Terminators.o
 
 ifcc: $(OBJECTS)
