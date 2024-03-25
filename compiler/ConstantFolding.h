@@ -12,6 +12,8 @@ class ConstantFoldingVisitor : public ir::Visitor {
     void visit(ir::Cast& cast) override;
     void visit(ir::ConditionalJump& jump) override;
 
+    bool tryFoldSpecialBinaryOp(ir::BinaryOp& binaryOp);
+
     bool changed() const { return m_changed; }
 
   private:

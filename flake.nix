@@ -31,7 +31,7 @@
               stdenv = (pkgs.callPackage mini-compile-commands {}).wrap pkgs.gcc11Stdenv;
           } {
               inputsFrom = [ self.packages.${system}.default ];
-              nativeBuildInputs = [pkgs.python3];
+              nativeBuildInputs = with pkgs; [python3 graphviz gdb];
 
               ANTLR_PATH = antlr.outPath;
               ANTLR_RUNTIME_PATH = antlr.runtime.cpp.outPath;

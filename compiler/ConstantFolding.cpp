@@ -18,6 +18,10 @@ void ConstantFoldingVisitor::visit(ir::BasicBlock& block) {
 }
 
 void ConstantFoldingVisitor::visit(ir::BinaryOp& binaryOp) {
+    if (tryFoldSpecialBinaryOp(binaryOp)) {
+        return;
+    }
+
     if (!std::holds_alternative<Immediate>(binaryOp.left()) || !std::holds_alternative<Immediate>(binaryOp.right())) {
         return;
     }
@@ -60,6 +64,68 @@ void ConstantFoldingVisitor::visit(ir::BinaryOp& binaryOp) {
     m_changed = true;
 }
 
+bool ConstantFoldingVisitor::tryFoldSpecialBinaryOp(ir::BinaryOp& binaryOp) {
+    auto isImmediateEqual = [](RValue rvalue, int64_t value) -> bool {
+        if (std::holds_alternative<Immediate>(rvalue)) {
+            Immediate imm = std::get<Immediate>(rvalue);
+            switch (imm.type()->size()) {
+                case 8: return imm.value64() == value;
+                case 4: return imm.value32() == value;
+                case 2: return imm.value16() == value;
+                case 1: return imm.value8() == value;
+                default: return false;
+            }
+        }
+
+        return false;
+    };
+
+    switch (binaryOp.operation()) {
+        case BinaryOpKind::ADD:
+            if (isImmediateEqual(binaryOp.right(), 0)) {
+                *m_currentInstruction = std::make_unique<Assignment>(binaryOp.destination(), binaryOp.left());
+                return true;
+            }
+            if (isImmediateEqual(binaryOp.left(), 0)) {
+                *m_currentInstruction = std::make_unique<Assignment>(binaryOp.destination(), binaryOp.right());
+                return true;
+            }
+            break;
+        case BinaryOpKind::SUB:
+            if (isImmediateEqual(binaryOp.right(), 0)) {
+                *m_currentInstruction = std::make_unique<Assignment>(binaryOp.destination(), binaryOp.left());
+                return true;
+            }
+            if (isImmediateEqual(binaryOp.left(), 0)) {
+                *m_currentInstruction = std::make_unique<UnaryOp>(binaryOp.destination(), binaryOp.right(), UnaryOpKind::MINUS);
+                return true;
+            }
+            break;
+        case BinaryOpKind::MUL:
+            if (isImmediateEqual(binaryOp.right(), 0)) {
+                *m_currentInstruction = std::make_unique<Assignment>(binaryOp.destination(), binaryOp.right());
+                return true;
+            }
+            if (isImmediateEqual(binaryOp.left(), 0)) {
+                *m_currentInstruction = std::make_unique<Assignment>(binaryOp.destination(), binaryOp.left());
+                return true;
+            }
+            if (isImmediateEqual(binaryOp.right(), 1)) {
+                *m_currentInstruction = std::make_unique<Assignment>(binaryOp.destination(), binaryOp.left());
+                return true;
+            }
+            if (isImmediateEqual(binaryOp.left(), 1)) {
+                *m_currentInstruction = std::make_unique<Assignment>(binaryOp.destination(), binaryOp.right());
+                return true;
+            }
+            break;
+
+        default: break;
+    }
+
+    return false;
+}
+
 void ConstantFoldingVisitor::visit(ir::UnaryOp& unaryOp) {
     if (!std::holds_alternative<Immediate>(unaryOp.operand())) {
         return;
@@ -91,13 +157,21 @@ void ConstantFoldingVisitor::visit(ir::UnaryOp& unaryOp) {
 }
 
 void ConstantFoldingVisitor::visit(ir::Cast& cast) {
+    auto sourceType = std::visit([](auto val) { return val.type(); }, cast.source());
+    auto destType = cast.destination().type();
+
+    // Source and dest types have the same bit representation so we can just assign
+    if (sourceType->size() == destType->size()) {
+        *m_currentInstruction = std::make_unique<Assignment>(cast.destination(), cast.source());
+        return;
+    }
+
     if (!std::holds_alternative<Immediate>(cast.source())) {
         return;
     }
 
     Immediate source = std::get<Immediate>(cast.source());
     auto type = source.type();
-    auto destType = cast.destination().type();
 
     Immediate folded = [&]() {
         switch (type->size()) {
