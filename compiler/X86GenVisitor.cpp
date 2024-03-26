@@ -15,9 +15,12 @@
 
 using namespace ir;
 
-static constexpr Register CALL_REGISTER[] = {
+constexpr static uint32_t ARGS_IN_REGISTER = 6;
+
+static constexpr Register CALL_REGISTER[ARGS_IN_REGISTER] = {
     Register::RDI, Register::RSI, Register::RDX, Register::RCX, Register::R8, Register::R9,
 };
+
 
 void X86GenVisitor::visit(ir::Function& function) {
     m_currentFunction = &function;
@@ -27,15 +30,16 @@ void X86GenVisitor::visit(ir::Function& function) {
     PointedLocals pointedLocals = computePointedLocals(function);
     DependanceMap dependanceMap = computeDependanceMap(function);
     InterferenceGraph interferenceGraph{function.locals().size()};
+    m_localsUsedThroughCalls.clear();
     // Compute the interferenceGraph using the block liveness analysis
-    computeBlockLivenessAnalysis(function, dependanceMap, &interferenceGraph);
+    m_livenessAnalysis = computeBlockLivenessAnalysis(function, dependanceMap, &interferenceGraph, &m_localsUsedThroughCalls);
 
     std::ofstream debugFile(function.name() + ".ig.dot");
     interferenceGraph.printDot(debugFile);
 
     std::cerr << function.name() << ": " << std::endl;
 
-    std::vector<Register> usableRegisters{Register::RBX, Register::R12, Register::R13, Register::R14, Register::R15};
+    std::vector<Register> usableRegisters{Register::R8, Register::R9, Register::RBX, Register::R12, Register::R13, Register::R14, Register::R15};
 
     RegisterAllocationResult registerAllocation =
         computeRegisterAllocation(function, pointedLocals, interferenceGraph, usableRegisters.size());
@@ -43,6 +47,27 @@ void X86GenVisitor::visit(ir::Function& function) {
     std::set<Register> usedRegisters;
     for (const auto& [localId, registerId] : registerAllocation.registers()) {
         Local local{localId, function.locals()[localId].type()};
+
+        if (localId == 0 && interferenceGraph.neighbors(localId).empty()) {
+            m_localsInRegister.insert({local, Register::RAX});
+            continue;
+        } 
+
+        if (localId > 0 && localId <= function.argCount() && localId <= ARGS_IN_REGISTER) {
+            // We might me able to let this argument in his register
+            bool possible = true;
+            for (const auto& [key, pair] : m_localsUsedThroughCalls) {
+                if (pair.first.contains(local)) {
+                    possible = false;
+                }
+            }
+
+            if (possible) {
+                m_localsInRegister.insert({local, CALL_REGISTER[localId - 1]});
+                continue;
+            }
+        }
+
         Register reg = usableRegisters[registerId];
         m_localsInRegister.insert({local, reg});
         usedRegisters.insert(reg);
@@ -60,7 +85,8 @@ void X86GenVisitor::visit(ir::Function& function) {
     m_out << function.name() << ":\n";
     m_out << "    pushq   %rbp\n";
     for (auto reg : usedRegisters) {
-        emit("pushq", SizedRegister{reg, 8});
+        if (preserved(reg))
+            emit("pushq", SizedRegister{reg, 8});
     }
     m_out << "    movq    %rsp, %rbp\n";
     m_out << "    subq    $" << m_localsOnStack.size() * 8 << ", %rsp\n";
@@ -85,7 +111,8 @@ void X86GenVisitor::visit(ir::Function& function) {
     m_out << "    movq    %rbp, %rsp\n";
 
     for (auto it = usedRegisters.rbegin(); it != usedRegisters.rend(); ++it) {
-        emit("popq", SizedRegister{*it, 8});
+        if (preserved(*it))
+            emit("popq", SizedRegister{*it, 8});
     }
     m_out << "    popq    %rbp\n";
     m_out << "    ret\n";
@@ -317,6 +344,18 @@ void X86GenVisitor::visit(ir::ConditionalJump& jump) {
 }
 
 void X86GenVisitor::visit(ir::Call& call) {
+    const auto& [before, after] = m_localsUsedThroughCalls.at(&call);
+    std::vector<Register> savedRegister;
+    for (const auto& local : before) {
+        if (!after.contains(local)) continue;
+        auto optReg = variableRegister(local);
+        if (optReg && !preserved(optReg.value())) {
+            emit("pushq", SizedRegister(optReg.value(), 8));
+            savedRegister.push_back(optReg.value());
+        }
+    }
+
+
     for (size_t i = 0; i < call.args().size(); i++) {
         RValue arg = call.args()[i];
         auto type = std::visit([](auto val) { return val.type(); }, arg);
@@ -335,6 +374,11 @@ void X86GenVisitor::visit(ir::Call& call) {
         auto suffix = getSuffix(rax.size);
         emit("mov", suffix, rax, call.destination());
     }
+
+    for (const auto& saved : savedRegister | std::views::reverse) {
+        emit("popq", SizedRegister(saved, 8));
+    }
+
 }
 
 void X86GenVisitor::visit(ir::Cast& cast) {

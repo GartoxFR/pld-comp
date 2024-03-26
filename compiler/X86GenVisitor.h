@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BlockLivenessAnalysis.h"
 #include "ir/Instructions.h"
 #include "ir/Ir.h"
 #include <ostream>
@@ -20,7 +21,7 @@ enum class Register : uint8_t {
     RSI = 4,
     RDI = 5,
     RSP = 6,
-    RDP = 7,
+    RBP = 7,
     R8 = 8,
     R9 = 9,
     R10 = 10,
@@ -46,8 +47,8 @@ struct Label {
 
 inline const std::string_view REGISTER_ALIASES[16][4]{
     {"%rax", "%eax", "%ax", "%al"},      {"%rbx", "%ebx", "%bx", "%bl"},      {"%rcx", "%ecx", "%cx", "%cl"},
-    {"%rdx", "%edx", "%dx", "%dl"},      {"%rsi", "%esi", "%si", "%sil"},      {"%rdi", "%edi", "%di", "%dil"},
-    {"%rsp", "%esp", "%sp", "%spl"},     {"%rdp", "%edp", "%dp", "%dpl"},     {"%r8", "%r8d", "%r8w", "%r8b"},
+    {"%rdx", "%edx", "%dx", "%dl"},      {"%rsi", "%esi", "%si", "%sil"},     {"%rdi", "%edi", "%di", "%dil"},
+    {"%rsp", "%esp", "%sp", "%spl"},     {"%rbp", "%ebp", "%bp", "%bpl"},     {"%r8", "%r8d", "%r8w", "%r8b"},
     {"%r9", "%r9d", "%r9w", "%r9b"},     {"%r10", "%r10d", "%r10w", "%r10b"}, {"%r11", "%r11d", "%r11w", "%r11b"},
     {"%r12", "%r12d", "%r12w", "%r12b"}, {"%r13", "%r13d", "%r13w", "%r13b"}, {"%r14", "%r14d", "%r14w", "%r14b"},
     {"%r15", "%r15d", "%r15w", "%r15b"},
@@ -71,6 +72,30 @@ inline std::string_view getSuffix(size_t size) {
         case 1: return "b";
         default: throw std::runtime_error("Unsupported size");
     }
+}
+
+inline bool preserved(Register reg) {
+    switch (reg) {
+        case Register::RBX:
+        case Register::RSP:
+        case Register::RBP:
+        case Register::R12:
+        case Register::R13:
+        case Register::R14:
+        case Register::R15: return true;
+
+        case Register::RAX:
+        case Register::RSI:
+        case Register::RDI:
+        case Register::RDX:
+        case Register::RCX:
+        case Register::R8:
+        case Register::R9:
+        case Register::R10:
+        case Register::R11: return false;
+    }
+
+    return false;
 }
 
 class X86GenVisitor : public ir::Visitor {
@@ -138,7 +163,7 @@ class X86GenVisitor : public ir::Visitor {
             case 8: m_out << "$" << arg.value64(); break;
             case 4: m_out << "$" << arg.value32(); break;
             case 2: m_out << "$" << arg.value16(); break;
-            case 1: m_out << "$" << (int16_t) arg.value8(); break;
+            case 1: m_out << "$" << (int16_t)arg.value8(); break;
         }
     }
 
@@ -153,6 +178,8 @@ class X86GenVisitor : public ir::Visitor {
     ir::Function* m_currentFunction;
     std::unordered_map<ir::Local, Register> m_localsInRegister;
     std::unordered_map<ir::Local, size_t> m_localsOnStack;
+    BlockLivenessAnalysis m_livenessAnalysis;
+    LocalsUsedThroughCalls m_localsUsedThroughCalls;
 
     void loadEax(const ir::Local& local) { m_out << "    movl    " << variableLocation(local) << ", %eax\n"; }
     void loadEax(const ir::Immediate& immediate) { m_out << "    movl    $" << immediate.value32() << ", %eax\n"; }
@@ -171,9 +198,9 @@ class X86GenVisitor : public ir::Visitor {
         std::stringstream ss;
         auto it = m_localsInRegister.find(local);
         if (it != m_localsInRegister.end()) {
-            ss << registerLabel(SizedRegister {it->second, local.type()->size()});
+            ss << registerLabel(SizedRegister{it->second, local.type()->size()});
         } else {
-            ss << "-" <<  m_localsOnStack.at(local) << "(%rbp)";
+            ss << "-" << m_localsOnStack.at(local) << "(%rbp)";
         }
 
         return ss.str();
@@ -190,12 +217,12 @@ class X86GenVisitor : public ir::Visitor {
 
     std::optional<Register> rvalueRegister(const ir::RValue& rvalue) {
         return std::visit(
-                overloaded{
-                    [&](ir::Local local) { return variableRegister(local); },
-                    [&](auto unused) { return std::optional<Register>{}; },
-                },
-               rvalue
-            );
+            overloaded{
+                [&](ir::Local local) { return variableRegister(local); },
+                [&](auto unused) { return std::optional<Register>{}; },
+            },
+            rvalue
+        );
     }
 
     std::string literalLabel(const ir::StringLiteral& literal) {

@@ -8,12 +8,18 @@
 using LiveSet = std::unordered_set<ir::Local>;
 using BlockLivenessAnalysis = std::unordered_map<ir::BasicBlock*, std::pair<LiveSet, LiveSet>>;
 
+using LocalsUsedThroughCalls = std::unordered_map<const ir::Instruction*, std::pair<LiveSet, LiveSet>>;
+
 class BlockLivenessAnalysisVisitor : public ir::Visitor {
   public:
     using ir::Visitor::visit;
 
-    BlockLivenessAnalysisVisitor(DependanceMap& dependanceMap, InterferenceGraph* interferenceGraph = nullptr) :
-        m_dependanceMap(dependanceMap), m_interferenceGraph(interferenceGraph) {}
+    BlockLivenessAnalysisVisitor(
+        DependanceMap& dependanceMap, InterferenceGraph* interferenceGraph = nullptr,
+        LocalsUsedThroughCalls* calls = nullptr
+    ) :
+        m_dependanceMap(dependanceMap),
+        m_interferenceGraph(interferenceGraph), m_calls(calls) {}
 
     void visit(ir::Function& function) override;
     void visit(ir::BasicBlock& block) override;
@@ -33,6 +39,7 @@ class BlockLivenessAnalysisVisitor : public ir::Visitor {
     BlockLivenessAnalysis m_liveMap;
     DependanceMap& m_dependanceMap;
     InterferenceGraph* m_interferenceGraph;
+    LocalsUsedThroughCalls* m_calls;
 
     LiveSet m_workingSet;
 
@@ -88,9 +95,10 @@ class BlockLivenessAnalysisVisitor : public ir::Visitor {
 };
 
 inline BlockLivenessAnalysis computeBlockLivenessAnalysis(
-    ir::Function& function, DependanceMap& dependanceMap, InterferenceGraph* interferenceGraph = nullptr
+    ir::Function& function, DependanceMap& dependanceMap, InterferenceGraph* interferenceGraph = nullptr,
+    LocalsUsedThroughCalls* calls = nullptr
 ) {
-    BlockLivenessAnalysisVisitor visitor{dependanceMap, interferenceGraph};
+    BlockLivenessAnalysisVisitor visitor{dependanceMap, interferenceGraph, calls};
     visitor.visit(function);
 
     auto analysis = std::move(visitor.blocksLiveness());

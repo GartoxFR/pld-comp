@@ -49,6 +49,7 @@ void TwoStepAssignmentEliminationVisitor::visit(ir::ConditionalJump& jump) {
     variableUsed(jump.condition());
 }
 void TwoStepAssignmentEliminationVisitor::visit(ir::Call& call) {
+    variableAssigned(call.destination());
     for (auto& arg : call.args()) {
         variableUsed(arg);
     }

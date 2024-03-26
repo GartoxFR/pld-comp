@@ -63,8 +63,15 @@ void BlockLivenessAnalysisVisitor::visit(ir::Cast& cast) {
 
 void BlockLivenessAnalysisVisitor::visit(ir::ConditionalJump& jump) { setLive(jump.condition()); }
 void BlockLivenessAnalysisVisitor::visit(ir::Call& call) {
+    if (m_calls) {
+        (*m_calls)[&call].second = m_workingSet;
+    }
+    unsetLive(call.destination());
     for (auto& arg : call.args()) {
         setLive(arg);
+    }
+    if (m_calls) {
+        (*m_calls)[&call].first = m_workingSet;
     }
 }
 

@@ -1,7 +1,5 @@
 #include "DeadCodeElimination.h"
 #include <algorithm>
-#include <iostream>
-#include <iterator>
 #include <ranges>
 
 void DeadCodeElimination::visit(ir::Function& function) {
@@ -64,6 +62,7 @@ void DeadCodeElimination::visit(ir::Cast& cast) {
 
 void DeadCodeElimination::visit(ir::ConditionalJump& jump) { setLive(jump.condition()); }
 void DeadCodeElimination::visit(ir::Call& call) {
+    unsetLive(call.destination());
     for (auto& arg : call.args()) {
         setLive(arg);
     }
