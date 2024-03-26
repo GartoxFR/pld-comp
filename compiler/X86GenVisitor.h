@@ -122,33 +122,34 @@ class X86GenVisitor : public ir::Visitor {
 
     template <class... Ts>
     void emit(std::string_view instr, std::string_view suffix, Ts&&... args) {
-        m_out << "    " << instr << suffix << "\t";
-        emitArgs(args...);
-        m_out << "\n";
+        m_currentInstruction = &m_instructions.emplace_back();
+        std::stringstream ss;
+        ss << instr << suffix;
+        m_currentInstruction->push_back(ss.str());
+        std::cerr << m_instructions.size() << std::endl;
+
+        if constexpr (sizeof...(args) > 0)
+            emitArgs(args...);
     }
 
     template <class... Ts>
     void emit(std::string_view instr, Ts&&... args) {
-        m_out << "    " << instr << "\t";
-        if constexpr (sizeof...(Ts))
+        m_currentInstruction = &m_instructions.emplace_back();
+        m_currentInstruction->push_back(std::string(instr));
+
+        if constexpr (sizeof...(Ts) > 0)
             emitArgs(args...);
-        m_out << "\n";
     }
 
     template <class T, class... Ts>
     void emitArgs(T&& arg, Ts&&... args) {
         emitArg(std::forward<T>(arg));
-        m_out << ", ";
-        emitArgs(std::forward<Ts>(args)...);
+
+        if constexpr (sizeof...(args) > 0)
+            emitArgs(std::forward<Ts>(args)...);
     }
 
-    template <class T, class... Ts>
-        requires(sizeof...(Ts) == 0)
-    void emitArgs(T&& arg) {
-        emitArg(std::forward<T>(arg));
-    }
-
-    void emitArg(ir::Local arg) { m_out << variableLocation(arg); }
+    void emitArg(ir::Local arg) { m_currentInstruction->push_back(variableLocation(arg)); }
 
     void emitArg(ir::RValue arg) {
         if (std::holds_alternative<ir::Local>(arg)) {
@@ -159,27 +160,43 @@ class X86GenVisitor : public ir::Visitor {
     }
 
     void emitArg(ir::Immediate arg) {
+        std::stringstream ss;
         switch (arg.type()->size()) {
-            case 8: m_out << "$" << arg.value64(); break;
-            case 4: m_out << "$" << arg.value32(); break;
-            case 2: m_out << "$" << arg.value16(); break;
-            case 1: m_out << "$" << (int16_t)arg.value8(); break;
+            case 8: ss << "$" << arg.value64(); break;
+            case 4: ss << "$" << arg.value32(); break;
+            case 2: ss << "$" << arg.value16(); break;
+            case 1: ss << "$" << (int16_t)arg.value8(); break;
         }
+
+        m_currentInstruction->push_back(ss.str());
     }
 
-    void emitArg(const SizedRegister& arg) { m_out << registerLabel(arg); }
+    void emitArg(const SizedRegister& arg) { m_currentInstruction->push_back(std::string(registerLabel(arg))); }
 
-    void emitArg(const Deref& arg) { m_out << "(" << registerLabel(arg.reg) << ")"; }
+    void emitArg(const Deref& arg) { 
+        std::stringstream ss;
+        ss << "(" << registerLabel(arg.reg) << ")"; 
+        m_currentInstruction->push_back(ss.str());
+    }
 
-    void emitArg(const Label& arg) { m_out << arg.label; }
+    void emitArg(const Label& arg) { m_currentInstruction->push_back(std::string(arg.label)); }
+
+    void simplifyAsm();
+
+    void printAsm();
 
   private:
     std::ostream& m_out;
     ir::Function* m_currentFunction;
+    ir::BasicBlock* m_currentBlock;
     std::unordered_map<ir::Local, Register> m_localsInRegister;
     std::unordered_map<ir::Local, size_t> m_localsOnStack;
     BlockLivenessAnalysis m_livenessAnalysis;
     LocalsUsedThroughCalls m_localsUsedThroughCalls;
+    std::optional<std::string_view> m_optimizedCond;
+
+    std::vector<std::vector<std::string>> m_instructions;
+    std::vector<std::string>* m_currentInstruction;
 
     void loadEax(const ir::Local& local) { m_out << "    movl    " << variableLocation(local) << ", %eax\n"; }
     void loadEax(const ir::Immediate& immediate) { m_out << "    movl    $" << immediate.value32() << ", %eax\n"; }

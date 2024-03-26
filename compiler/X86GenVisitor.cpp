@@ -21,25 +21,27 @@ static constexpr Register CALL_REGISTER[ARGS_IN_REGISTER] = {
     Register::RDI, Register::RSI, Register::RDX, Register::RCX, Register::R8, Register::R9,
 };
 
-
 void X86GenVisitor::visit(ir::Function& function) {
     m_currentFunction = &function;
     m_localsInRegister.clear();
     m_localsOnStack.clear();
+    m_instructions.clear();
 
     PointedLocals pointedLocals = computePointedLocals(function);
     DependanceMap dependanceMap = computeDependanceMap(function);
     InterferenceGraph interferenceGraph{function.locals().size()};
     m_localsUsedThroughCalls.clear();
     // Compute the interferenceGraph using the block liveness analysis
-    m_livenessAnalysis = computeBlockLivenessAnalysis(function, dependanceMap, &interferenceGraph, &m_localsUsedThroughCalls);
+    m_livenessAnalysis =
+        computeBlockLivenessAnalysis(function, dependanceMap, &interferenceGraph, &m_localsUsedThroughCalls);
 
     std::ofstream debugFile(function.name() + ".ig.dot");
     interferenceGraph.printDot(debugFile);
 
     std::cerr << function.name() << ": " << std::endl;
 
-    std::vector<Register> usableRegisters{Register::R8, Register::R9, Register::RBX, Register::R12, Register::R13, Register::R14, Register::R15};
+    std::vector<Register> usableRegisters{Register::R8,  Register::R9,  Register::RBX, Register::R12,
+                                          Register::R13, Register::R14, Register::R15};
 
     RegisterAllocationResult registerAllocation =
         computeRegisterAllocation(function, pointedLocals, interferenceGraph, usableRegisters.size());
@@ -51,7 +53,7 @@ void X86GenVisitor::visit(ir::Function& function) {
         if (localId == 0 && interferenceGraph.neighbors(localId).empty()) {
             m_localsInRegister.insert({local, Register::RAX});
             continue;
-        } 
+        }
 
         if (localId > 0 && localId <= function.argCount() && localId <= ARGS_IN_REGISTER) {
             // We might me able to let this argument in his register
@@ -80,16 +82,25 @@ void X86GenVisitor::visit(ir::Function& function) {
         stackPos += 8;
     }
 
+    bool needStack = !m_localsOnStack.empty();
+
     m_out << ".section .text\n";
     m_out << ".global " << function.name() << "\n";
     m_out << function.name() << ":\n";
-    m_out << "    pushq   %rbp\n";
+
+    if (needStack) {
+        emit("pushq", SizedRegister(Register::RBP, 8));
+    }
+
     for (auto reg : usedRegisters) {
         if (preserved(reg))
             emit("pushq", SizedRegister{reg, 8});
     }
-    m_out << "    movq    %rsp, %rbp\n";
-    m_out << "    subq    $" << m_localsOnStack.size() * 8 << ", %rsp\n";
+
+    if (needStack) {
+        emit("movq", SizedRegister(Register::RSP, 8), SizedRegister(Register::RBP, 8));
+        emit("subq", Immediate(m_localsOnStack.size() * 8, types::LONG), SizedRegister(Register::RSP, 8));
+    }
 
     for (size_t i = 0; i < function.argCount(); i++) {
         auto type = function.locals()[i + 1].type();
@@ -108,14 +119,21 @@ void X86GenVisitor::visit(ir::Function& function) {
     auto suffix = getSuffix(function.returnLocal().type()->size());
     emit("mov", suffix, function.returnLocal(), rax);
 
-    m_out << "    movq    %rbp, %rsp\n";
+    if (needStack) {
+        emit("movq", SizedRegister(Register::RBP, 8), SizedRegister(Register::RSP, 8));
+    }
 
     for (auto it = usedRegisters.rbegin(); it != usedRegisters.rend(); ++it) {
         if (preserved(*it))
             emit("popq", SizedRegister{*it, 8});
     }
-    m_out << "    popq    %rbp\n";
-    m_out << "    ret\n";
+    if (needStack) {
+        emit("popq", SizedRegister(Register::RBP, 8));
+    }
+    emit("ret");
+
+    simplifyAsm();
+    printAsm();
 
     m_out << "\n";
     m_out << ".section .rodata\n";
@@ -128,7 +146,9 @@ void X86GenVisitor::visit(ir::Function& function) {
 }
 
 void X86GenVisitor::visit(ir::BasicBlock& block) {
-    m_out << block.label() << ":\n";
+    m_currentBlock = &block;
+    m_optimizedCond = std::nullopt;
+    emit(std::string_view(block.label()), std::string_view(":"));
     for (auto& instr : block.instructions()) {
         visitBase(*instr);
     }
@@ -182,7 +202,8 @@ void X86GenVisitor::emitSimpleArithmeticCommutative(std::string_view instruction
     }
 }
 
-void X86GenVisitor::emitCmp(std::string_view instruction, const ir::BinaryOp& binaryOp) {
+void X86GenVisitor::emitCmp(std::string_view instructionSuffix, const ir::BinaryOp& binaryOp) {
+
     auto operandSize = std::visit([](auto val) { return val.type()->size(); }, binaryOp.left());
     SizedRegister rax = {Register::RAX, operandSize};
     auto suffix = getSuffix(operandSize);
@@ -198,13 +219,24 @@ void X86GenVisitor::emitCmp(std::string_view instruction, const ir::BinaryOp& bi
 
     emit("cmp", suffix, binaryOp.right(), sourceReg);
 
+    if (m_currentBlock->instructions().back().get() == &binaryOp && !m_livenessAnalysis[m_currentBlock].second.contains(binaryOp.destination())) {
+        ConditionalJump* jump = dynamic_cast<ConditionalJump*>(m_currentBlock->terminator().get());
+        if (jump) {
+            if (std::holds_alternative<Local>(jump->condition()) &&
+                std::get<Local>(jump->condition()) == binaryOp.destination()) {
+                m_optimizedCond = instructionSuffix;
+                return;
+            }
+        }
+    }
+
     auto optionalReg = variableRegister(binaryOp.destination());
     if (optionalReg) {
         SizedRegister reg{optionalReg.value(), 1};
-        emit(instruction, reg);
+        emit("set", instructionSuffix, reg);
     } else {
         SizedRegister al{Register::RAX, 1};
-        emit(instruction, al);
+        emit("set", instructionSuffix, al);
         emit("mov", getSuffix(1), al, binaryOp.destination());
     }
 }
@@ -249,12 +281,12 @@ void X86GenVisitor::visit(ir::BinaryOp& binaryOp) {
         case BinaryOpKind::MUL: emitSimpleArithmeticCommutative("imul", binaryOp); break;
         case BinaryOpKind::DIV: emitDiv(false, binaryOp); break;
         case BinaryOpKind::MOD: emitDiv(true, binaryOp); break;
-        case BinaryOpKind::EQ: emitCmp("sete", binaryOp); break;
-        case BinaryOpKind::NEQ: emitCmp("setne", binaryOp); break;
-        case BinaryOpKind::CMP_L: emitCmp("setl", binaryOp); break;
-        case BinaryOpKind::CMP_G: emitCmp("setg", binaryOp); break;
-        case BinaryOpKind::CMP_LE: emitCmp("setle", binaryOp); break;
-        case BinaryOpKind::CMP_GE: emitCmp("setge", binaryOp); break;
+        case BinaryOpKind::EQ: emitCmp("e", binaryOp); break;
+        case BinaryOpKind::NEQ: emitCmp("ne", binaryOp); break;
+        case BinaryOpKind::CMP_L: emitCmp("l", binaryOp); break;
+        case BinaryOpKind::CMP_G: emitCmp("g", binaryOp); break;
+        case BinaryOpKind::CMP_LE: emitCmp("le", binaryOp); break;
+        case BinaryOpKind::CMP_GE: emitCmp("ge", binaryOp); break;
         case BinaryOpKind::BIT_AND: emitSimpleArithmeticCommutative("and", binaryOp); break;
         case BinaryOpKind::BIT_XOR: emitSimpleArithmeticCommutative("xor", binaryOp); break;
         case BinaryOpKind::BIT_OR: emitSimpleArithmeticCommutative("or", binaryOp); break;
@@ -292,6 +324,17 @@ void X86GenVisitor::visit(ir::UnaryOp& unaryOp) {
 
             emit("test", sourceReg, sourceReg);
 
+            if (m_currentBlock->instructions().back().get() == &unaryOp && !m_livenessAnalysis[m_currentBlock].second.contains(unaryOp.destination())) {
+                ConditionalJump* jump = dynamic_cast<ConditionalJump*>(m_currentBlock->terminator().get());
+                if (jump) {
+                    if (std::holds_alternative<Local>(jump->condition()) &&
+                        std::get<Local>(jump->condition()) == unaryOp.destination()) {
+                        m_optimizedCond = "z";
+                        return;
+                    }
+                }
+            }
+
             optionalReg = variableRegister(unaryOp.destination());
             if (optionalReg) {
                 SizedRegister reg{optionalReg.value(), unaryOp.destination().type()->size()};
@@ -327,34 +370,39 @@ void X86GenVisitor::visit(ir::Assignment& assignment) {
     }
 }
 
-void X86GenVisitor::visit(ir::BasicJump& jump) { m_out << "    jmp     " << jump.target()->label() << "\n"; }
+void X86GenVisitor::visit(ir::BasicJump& jump) { emit("jmp", Label(jump.target()->label())); }
 void X86GenVisitor::visit(ir::ConditionalJump& jump) {
     auto size = std::visit([](auto val) { return val.type()->size(); }, jump.condition());
     auto suffix = getSuffix(size);
     SizedRegister reg = {Register::RAX, size};
-    auto optionalReg = rvalueRegister(jump.condition());
-    if (optionalReg) {
-        reg.reg = optionalReg.value();
+
+    if (m_optimizedCond.has_value()) {
+        emit("j", m_optimizedCond.value(), Label(jump.trueTarget()->label()));
     } else {
-        emit("mov", suffix, jump.condition(), reg);
+        auto optionalReg = rvalueRegister(jump.condition());
+        if (optionalReg) {
+            reg.reg = optionalReg.value();
+        } else {
+            emit("mov", suffix, jump.condition(), reg);
+        }
+        emit("test", reg, reg);
+        emit("jne", Label(jump.trueTarget()->label()));
     }
-    emit("test", reg, reg);
-    m_out << "    jne     " << jump.trueTarget()->label() << "\n";
-    m_out << "    jmp     " << jump.falseTarget()->label() << "\n";
+    emit("jmp", Label(jump.falseTarget()->label()));
 }
 
 void X86GenVisitor::visit(ir::Call& call) {
     const auto& [before, after] = m_localsUsedThroughCalls.at(&call);
     std::vector<Register> savedRegister;
     for (const auto& local : before) {
-        if (!after.contains(local)) continue;
+        if (!after.contains(local))
+            continue;
         auto optReg = variableRegister(local);
         if (optReg && !preserved(optReg.value())) {
             emit("pushq", SizedRegister(optReg.value(), 8));
             savedRegister.push_back(optReg.value());
         }
     }
-
 
     for (size_t i = 0; i < call.args().size(); i++) {
         RValue arg = call.args()[i];
@@ -378,7 +426,6 @@ void X86GenVisitor::visit(ir::Call& call) {
     for (const auto& saved : savedRegister | std::views::reverse) {
         emit("popq", SizedRegister(saved, 8));
     }
-
 }
 
 void X86GenVisitor::visit(ir::Cast& cast) {
@@ -480,5 +527,66 @@ void X86GenVisitor::visit(ir::AddressOf& addressOf) {
             emit("leaq", Label(literalLabel(literal)), destReg);
             emit("movq", destReg, addressOf.destination());
         }
+    }
+}
+
+void X86GenVisitor::simplifyAsm() {
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        std::unordered_set<std::string> usedLabels;
+        for (size_t i = 0; i < m_instructions.size(); i++) {
+            auto& instr = m_instructions[i];
+            if (instr.empty())
+                continue;
+
+            if ((instr[0] == "movq" || instr[0] == "movl" || instr[0] == "movw" || instr[0] == "movb") &&
+                instr.at(1) == instr.at(2)) {
+                instr.clear();
+                changed = true;
+                continue;
+            }
+
+            if (i != m_instructions.size() - 1) {
+                if (instr[0] == "jmp" && m_instructions[i + 1][0].starts_with(instr[1])) {
+                    instr.clear();
+                    changed = true;
+                    continue;
+                }
+            }
+
+            if (instr[0].starts_with("j") && instr.size() > 1) {
+                usedLabels.insert(instr[1]);
+            }
+        }
+
+        for (auto& instr : m_instructions) {
+            if (instr.empty())
+                continue;
+
+            if (instr[0].ends_with(":") && !usedLabels.contains(instr[0].substr(0, instr[0].size() - 1))) {
+                instr.clear();
+            }
+        }
+
+        auto it = std::remove_if(m_instructions.begin(), m_instructions.end(), [](auto vec) { return vec.empty(); });
+        if (it != m_instructions.end())
+            m_instructions.erase(it);
+    }
+}
+
+void X86GenVisitor::printAsm() {
+    for (const auto& instr : m_instructions) {
+        if (instr.empty())
+            continue;
+        if (!instr[0].ends_with(":"))
+            m_out << "\t";
+        m_out << instr[0] << "\t";
+        for (size_t i = 1; i < instr.size(); i++) {
+            if (i != 1)
+                m_out << ", ";
+            m_out << instr[i];
+        }
+        m_out << "\n";
     }
 }
