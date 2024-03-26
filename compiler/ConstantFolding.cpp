@@ -35,8 +35,14 @@ void ConstantFoldingVisitor::visit(ir::BinaryOp& binaryOp) {
             case BinaryOpKind::ADD: return Immediate(left + right, type);
             case BinaryOpKind::SUB: return Immediate(left - right, type);
             case BinaryOpKind::MUL: return Immediate(left * right, type);
-            case BinaryOpKind::DIV: return Immediate(left / right, type);
-            case BinaryOpKind::MOD: return Immediate(left % right, type);
+            case BinaryOpKind::DIV:
+                if (right == 0)
+                    return Immediate(0, type);
+                return Immediate(left / right, type);
+            case BinaryOpKind::MOD: 
+                if (right == 0)
+                    return Immediate(0, type);
+                return Immediate(left % right, type);
             case BinaryOpKind::EQ: return Immediate(left == right, type);
             case BinaryOpKind::NEQ: return Immediate(left != right, type);
             case BinaryOpKind::CMP_L: return Immediate(left < right, type);
@@ -97,7 +103,8 @@ bool ConstantFoldingVisitor::tryFoldSpecialBinaryOp(ir::BinaryOp& binaryOp) {
                 return true;
             }
             if (isImmediateEqual(binaryOp.left(), 0)) {
-                *m_currentInstruction = std::make_unique<UnaryOp>(binaryOp.destination(), binaryOp.right(), UnaryOpKind::MINUS);
+                *m_currentInstruction =
+                    std::make_unique<UnaryOp>(binaryOp.destination(), binaryOp.right(), UnaryOpKind::MINUS);
                 return true;
             }
             break;

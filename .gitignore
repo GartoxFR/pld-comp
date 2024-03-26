@@ -1,6 +1,6 @@
 # Build garbage
 build/
-generated
+compiler/generated
 
 compiler/*.mk
 compiler/ifcc
