@@ -150,6 +150,7 @@ async def job(input_file: Path, semaphore: asyncio.Semaphore):
             "gcc", "-o",
             p / "exe-gcc",
             p / "asm-gcc.s",
+            "-fPIE",
             stderr=gcc_out.open("w")
         )
         ifcc_link = await asyncio.create_subprocess_exec(
