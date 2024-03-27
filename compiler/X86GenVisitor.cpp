@@ -131,11 +131,14 @@ void X86GenVisitor::visit(ir::Function& function) {
     }
 
     for (auto it = usedRegisters.rbegin(); it != usedRegisters.rend(); ++it) {
-        if (preserved(*it))
+        if (preserved(*it)) {
             emit("popq", SizedRegister{*it, 8});
+            m_stackAlignment--;
+        }
     }
     if (needStack) {
         emit("popq", SizedRegister(Register::RBP, 8));
+        m_stackAlignment--;
     }
     emit("ret");
 
@@ -444,6 +447,7 @@ void X86GenVisitor::visit(ir::Call& call) {
 
     for (const auto& saved : savedRegister | std::views::reverse) {
         emit("popq", SizedRegister(saved, 8));
+        m_stackAlignment--;
     }
 }
 
