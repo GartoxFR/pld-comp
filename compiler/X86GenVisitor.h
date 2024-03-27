@@ -218,6 +218,9 @@ class X86GenVisitor : public ir::Visitor {
     std::vector<std::vector<std::string>> m_instructions;
     std::vector<std::string>* m_currentInstruction;
 
+    // Number of 8 byte pushed on the stack since the call
+    size_t m_stackAlignment = 0;
+
     void loadEax(const ir::Local& local) { m_out << "    movl    " << variableLocation(local) << ", %eax\n"; }
     void loadEax(const ir::Immediate& immediate) { m_out << "    movl    $" << immediate.value32() << ", %eax\n"; }
 

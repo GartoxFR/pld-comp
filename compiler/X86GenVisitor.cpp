@@ -27,6 +27,9 @@ void X86GenVisitor::visit(ir::Function& function) {
     m_localsOnStack.clear();
     m_instructions.clear();
 
+    // When we are called, there is the return address pushed
+    m_stackAlignment = 1;
+
     PointedLocals pointedLocals = computePointedLocals(function);
     DependanceMap dependanceMap = computeDependanceMap(function);
     InterferenceGraph interferenceGraph{function.locals().size()};
@@ -90,16 +93,20 @@ void X86GenVisitor::visit(ir::Function& function) {
 
     if (needStack) {
         emit("pushq", SizedRegister(Register::RBP, 8));
+        m_stackAlignment++;
     }
 
     for (auto reg : usedRegisters) {
-        if (preserved(reg))
+        if (preserved(reg)) {
             emit("pushq", SizedRegister{reg, 8});
+            m_stackAlignment++;
+        }
     }
 
     if (needStack) {
         emit("movq", SizedRegister(Register::RSP, 8), SizedRegister(Register::RBP, 8));
         emit("subq", Immediate(m_localsOnStack.size() * 8, types::LONG), SizedRegister(Register::RSP, 8));
+        m_stackAlignment += m_localsOnStack.size();
     }
 
     for (size_t i = 0; i < function.argCount(); i++) {
@@ -401,6 +408,7 @@ void X86GenVisitor::visit(ir::Call& call) {
         if (optReg && !preserved(optReg.value())) {
             emit("pushq", SizedRegister(optReg.value(), 8));
             savedRegister.push_back(optReg.value());
+            m_stackAlignment++;
         }
     }
 
@@ -412,11 +420,22 @@ void X86GenVisitor::visit(ir::Call& call) {
         emit("mov", suffix, arg, reg);
     }
 
+    bool alignmentCorrection = m_stackAlignment % 2 == 1;
+
+    if (alignmentCorrection) {
+        emit("pushq", SizedRegister{Register::RCX, 8});
+    }
+
     if (call.variadic()) {
         emit("movq", Immediate(0, types::LONG), SizedRegister(Register::RAX, 8));
     }
 
     emit("call", FunctionLabel(call.name()));
+
+    if (alignmentCorrection) {
+        emit("popq", SizedRegister{Register::RCX, 8});
+    }
+
     if (call.destination().type()->size() > 0) {
         SizedRegister rax = {Register::RAX, call.destination().type()->size()};
         auto suffix = getSuffix(rax.size);
