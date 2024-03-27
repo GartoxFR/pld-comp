@@ -136,7 +136,7 @@ void X86GenVisitor::visit(ir::Function& function) {
     printAsm();
 
     m_out << "\n";
-    m_out << ".section .rodata\n";
+    m_out << ".section .rodata." << function.name() << ".str\n";
     int i = 0;
     for (const auto& literal : function.literals()) {
         m_out << literalLabel(StringLiteral(i)) << ":\n";
