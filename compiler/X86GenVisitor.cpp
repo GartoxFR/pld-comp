@@ -136,7 +136,7 @@ void X86GenVisitor::visit(ir::Function& function) {
     printAsm();
 
     m_out << "\n";
-    m_out << ".section .rodata." << function.name() << ".str\n";
+    m_out << ".section .rodata\n";
     int i = 0;
     for (const auto& literal : function.literals()) {
         m_out << literalLabel(StringLiteral(i)) << ":\n";
@@ -416,7 +416,7 @@ void X86GenVisitor::visit(ir::Call& call) {
         emit("movq", Immediate(0, types::LONG), SizedRegister(Register::RAX, 8));
     }
 
-    emit("call", PieLabel(call.name()));
+    emit("call", FunctionLabel(call.name()));
     if (call.destination().type()->size() > 0) {
         SizedRegister rax = {Register::RAX, call.destination().type()->size()};
         auto suffix = getSuffix(rax.size);
@@ -522,9 +522,9 @@ void X86GenVisitor::visit(ir::AddressOf& addressOf) {
         auto optionalReg = variableRegister(addressOf.destination());
         if (optionalReg) {
             destReg.reg = optionalReg.value();
-            emit("leaq", PieLabel(literalLabel(literal)), destReg);
+            emit("leaq", DataLabel(literalLabel(literal)), destReg);
         } else {
-            emit("leaq", PieLabel(literalLabel(literal)), destReg);
+            emit("leaq", DataLabel(literalLabel(literal)), destReg);
             emit("movq", destReg, addressOf.destination());
         }
     }

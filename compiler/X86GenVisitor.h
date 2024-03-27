@@ -46,7 +46,11 @@ struct Label {
     std::string_view label;
 };
 
-struct PieLabel {
+struct FunctionLabel {
+    std::string_view label;
+};
+
+struct DataLabel {
     std::string_view label;
 };
 
@@ -177,18 +181,25 @@ class X86GenVisitor : public ir::Visitor {
 
     void emitArg(const SizedRegister& arg) { m_currentInstruction->push_back(std::string(registerLabel(arg))); }
 
-    void emitArg(const Deref& arg) { 
+    void emitArg(const Deref& arg) {
         std::stringstream ss;
-        ss << "(" << registerLabel(arg.reg) << ")"; 
+        ss << "(" << registerLabel(arg.reg) << ")";
         m_currentInstruction->push_back(ss.str());
     }
 
     void emitArg(const Label& arg) { m_currentInstruction->push_back(std::string(arg.label)); }
 
-    void emitArg(const PieLabel& arg) { 
+    void emitArg(const FunctionLabel& arg) {
         std::stringstream ss;
         ss << arg.label << "@PLT";
-        m_currentInstruction->push_back(ss.str()); }
+        m_currentInstruction->push_back(ss.str());
+    }
+
+    void emitArg(const DataLabel& arg) {
+        std::stringstream ss;
+        ss << arg.label << "(%rip)";
+        m_currentInstruction->push_back(ss.str());
+    }
 
     void simplifyAsm();
 
