@@ -126,7 +126,6 @@ class X86GenVisitor : public ir::Visitor {
         std::stringstream ss;
         ss << instr << suffix;
         m_currentInstruction->push_back(ss.str());
-        std::cerr << m_instructions.size() << std::endl;
 
         if constexpr (sizeof...(args) > 0)
             emitArgs(args...);
