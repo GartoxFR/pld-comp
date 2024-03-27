@@ -117,11 +117,24 @@ void X86GenVisitor::visit(ir::Function& function) {
         emit("mov", suffix, reg, local);
     }
 
+    bool adjustAlignment = m_stackAlignment % 2 == 1 && m_localsUsedThroughCalls.size() != 0;
+
+    if (adjustAlignment) {
+        emit("pushq", SizedRegister(Register::RCX, 8));
+        m_stackAlignment++;
+    }
+
     visit(*function.prologue());
     for (auto& block : function.blocks()) {
         visit(*block);
     }
     visit(*function.epilogue());
+
+    if (adjustAlignment) {
+        emit("popq", SizedRegister(Register::RCX, 8));
+        m_stackAlignment--;
+    }
+
     SizedRegister rax{Register::RAX, function.returnLocal().type()->size()};
     auto suffix = getSuffix(function.returnLocal().type()->size());
     emit("mov", suffix, function.returnLocal(), rax);
