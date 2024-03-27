@@ -4,6 +4,7 @@
 #include "ir/Instructions.h"
 #include "ir/Ir.h"
 #include <ostream>
+#include <sstream>
 #include <unordered_map>
 
 template <class... Ts>
@@ -42,6 +43,10 @@ struct Deref {
 };
 
 struct Label {
+    std::string_view label;
+};
+
+struct PieLabel {
     std::string_view label;
 };
 
@@ -179,6 +184,11 @@ class X86GenVisitor : public ir::Visitor {
     }
 
     void emitArg(const Label& arg) { m_currentInstruction->push_back(std::string(arg.label)); }
+
+    void emitArg(const PieLabel& arg) { 
+        std::stringstream ss;
+        ss << arg.label << "@PLT";
+        m_currentInstruction->push_back(ss.str()); }
 
     void simplifyAsm();
 

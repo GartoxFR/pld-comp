@@ -416,7 +416,7 @@ void X86GenVisitor::visit(ir::Call& call) {
         emit("movq", Immediate(0, types::LONG), SizedRegister(Register::RAX, 8));
     }
 
-    emit("call", Label(call.name()));
+    emit("call", PieLabel(call.name()));
     if (call.destination().type()->size() > 0) {
         SizedRegister rax = {Register::RAX, call.destination().type()->size()};
         auto suffix = getSuffix(rax.size);
@@ -522,9 +522,9 @@ void X86GenVisitor::visit(ir::AddressOf& addressOf) {
         auto optionalReg = variableRegister(addressOf.destination());
         if (optionalReg) {
             destReg.reg = optionalReg.value();
-            emit("leaq", Label(literalLabel(literal)), destReg);
+            emit("leaq", PieLabel(literalLabel(literal)), destReg);
         } else {
-            emit("leaq", Label(literalLabel(literal)), destReg);
+            emit("leaq", PieLabel(literalLabel(literal)), destReg);
             emit("movq", destReg, addressOf.destination());
         }
     }

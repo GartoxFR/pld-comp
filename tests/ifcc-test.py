@@ -118,7 +118,6 @@ async def job(input_file: Path, semaphore: asyncio.Semaphore):
         # IFCC compiler
         ifcc_comp = await asyncio.create_subprocess_exec(
             Path.cwd() /"compiler/ifcc", p / "input.c",
-            "-fPIE",
             stdout=(p / "asm-ifcc.s").open("w"),
             stderr=ifcc_out.open("w")
         )
@@ -157,7 +156,6 @@ async def job(input_file: Path, semaphore: asyncio.Semaphore):
             "gcc", "-o",
             p / "exe-ifcc",
             p / "asm-ifcc.s",
-            "-fPIE",
             stderr=ifcc_out.open("w")
         )
         await gcc_link.wait()
