@@ -69,6 +69,9 @@ void DeadCodeElimination::visit(ir::Call& call) {
 }
 
 void DeadCodeElimination::visit(ir::PointerRead& read) {
+    if (tryDrop(read.destination())) {
+        return;
+    }
     unsetLive(read.destination());
     setLive(read.address());
 }

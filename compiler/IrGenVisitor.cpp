@@ -286,12 +286,23 @@ std::any IrGenVisitor::visitAssign(ifccParser::AssignContext* ctx) {
                 res = emitCast(res, local.type());
             }
 
-            m_currentBlock->emit<BinaryOp>(local, local, res, op);
+            if (lvalue.local.type()->isPtr()) {
+                Local result = visitPointerBinaryOp(local, res, op);
+                m_currentBlock->emit<Assignment>(local, result);
+            } else {
+                m_currentBlock->emit<BinaryOp>(local, local, res, op);
+            }
+
             return local;
         } else {
             auto local = m_currentFunction->newLocal(lvalue.local.type()->target());
             m_currentBlock->emit<PointerRead>(local, lvalue.local);
-            m_currentBlock->emit<BinaryOp>(local, local, res, op);
+            if (local.type()->isPtr()) {
+                Local result = visitPointerBinaryOp(local, res, op);
+                m_currentBlock->emit<Assignment>(local, result);
+            } else {
+                m_currentBlock->emit<BinaryOp>(local, local, res, op);
+            }
             m_currentBlock->emit<PointerWrite>(lvalue.local, local);
 
             return local;
@@ -370,7 +381,7 @@ std::any IrGenVisitor::visitEqOp(ifccParser::EqOpContext* ctx) {
     return visitBinaryOp(ctx->expr(0), ctx->expr(1), op, true);
 }
 
-std::any IrGenVisitor::visitPointerBinaryOp(ir::Local left, ir::Local right, ir::BinaryOpKind op) {
+ir::Local IrGenVisitor::visitPointerBinaryOp(ir::Local left, ir::Local right, ir::BinaryOpKind op) {
     if (left.type() != right.type()) {
         right = emitCast(right, left.type());
     }
@@ -521,13 +532,32 @@ std::any IrGenVisitor::visitPreIncrDecrOp(ifccParser::PreIncrDecrOpContext* ctx)
 
     LValueResult res = std::any_cast<LValueResult>(visit(ctx->lvalue()));
     if (!res.address) {
-        m_currentBlock->emit<BinaryOp>(res.local, res.local, Immediate(1, res.local.type()), op);
+
+        if (res.local.type()->isPtr()) {
+            Local one = m_currentFunction->newLocal(res.local.type());
+            m_currentBlock->emit<Assignment>(one, Immediate(1, res.local.type()));
+            Local addResult = visitPointerBinaryOp(res.local, one, op);
+            m_currentBlock->emit<Assignment>(res.local, addResult);
+        } else {
+            m_currentBlock->emit<BinaryOp>(res.local, res.local, Immediate(1, res.local.type()), op);
+        }
 
         return res.local;
     } else {
         Local result = m_currentFunction->newLocal(res.local.type()->target());
         m_currentBlock->emit<PointerRead>(result, res.local);
-        m_currentBlock->emit<BinaryOp>(result, result, Immediate(1, result.type()), op);
+
+        if (result.type()->isPtr()) {
+            Local one = m_currentFunction->newLocal(res.local.type());
+            m_currentBlock->emit<Assignment>(one, Immediate(1, res.local.type()));
+            Local addResult = visitPointerBinaryOp(result, one, op);
+            m_currentBlock->emit<PointerWrite>(res.local, result);
+            m_currentBlock->emit<Assignment>(result, addResult);
+
+        } else {
+            m_currentBlock->emit<BinaryOp>(result, result, Immediate(1, result.type()), op);
+        }
+
         m_currentBlock->emit<PointerWrite>(res.local, result);
 
         return result;
@@ -545,19 +575,33 @@ std::any IrGenVisitor::visitPostIncrDecrOp(ifccParser::PostIncrDecrOpContext* ct
         op = BinaryOpKind::SUB;
     }
 
-    LValueResult res = std::any_cast<LValueResult>(visit(ctx->lvalue()));
+    LValueResult res = std::any_cast<LValueResult>(visit(ctx->postLvalue()));
     if (!res.address) {
         Local temp = m_currentFunction->newLocal(res.local.type());
         m_currentBlock->emit<Assignment>(temp, res.local);
-        m_currentBlock->emit<BinaryOp>(res.local, res.local, Immediate(1, res.local.type()), op);
+        if (res.local.type()->isPtr()) {
+            Local one = m_currentFunction->newLocal(res.local.type());
+            m_currentBlock->emit<Assignment>(one, Immediate(1, res.local.type()));
+            Local addResult = visitPointerBinaryOp(res.local, one, op);
+            m_currentBlock->emit<Assignment>(res.local, addResult);
+        } else {
+            m_currentBlock->emit<BinaryOp>(res.local, res.local, Immediate(1, res.local.type()), op);
+        }
 
         return temp;
     } else {
         Local temp = m_currentFunction->newLocal(res.local.type()->target());
         m_currentBlock->emit<PointerRead>(temp, res.local);
-        Local result = m_currentFunction->newLocal(temp.type());
-        m_currentBlock->emit<BinaryOp>(result, temp, Immediate(1, result.type()), op);
-        m_currentBlock->emit<PointerWrite>(res.local, result);
+        if (temp.type()->isPtr()) {
+            Local one = m_currentFunction->newLocal(res.local.type());
+            m_currentBlock->emit<Assignment>(one, Immediate(1, res.local.type()));
+            Local result = visitPointerBinaryOp(temp, one, op);
+            m_currentBlock->emit<PointerWrite>(res.local, result);
+        } else {
+            Local result = m_currentFunction->newLocal(temp.type());
+            m_currentBlock->emit<BinaryOp>(result, temp, Immediate(1, result.type()), op);
+            m_currentBlock->emit<PointerWrite>(res.local, result);
+        }
 
         return temp;
     }

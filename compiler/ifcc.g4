@@ -22,7 +22,7 @@ declare_stmt : type idents+=initializer (',' idents+=initializer)* ';' ;
 initializer : IDENT ('=' expr | ) ;
 
 expr: IDENT '(' (expr (',' expr)*)? ')' # call
-    | lvalue INCRDECR_OP # postIncrDecrOp
+    | postLvalue INCRDECR_OP # postIncrDecrOp
     | SUM_OP expr # unarySumOp
     | UNARY_OP expr # unaryOp
     | BIT_AND lvalue # addressOf
@@ -44,10 +44,13 @@ expr: IDENT '(' (expr (',' expr)*)? ')' # call
     | '(' expr ')' # par
     ;
 
-lvalue: IDENT # lvalueVar
-      | STAR expr # lvalueDeref
-      | IDENT '[' expr ']' # lvalueIndex
-      | '(' lvalue ')' # lvaluePar
+lvalue : postLvalue | preLvalue ;
+postLvalue: IDENT # lvalueVar
+          | IDENT '[' expr ']' # lvalueIndex
+          | '(' lvalue ')' # lvaluePar
+          ;
+
+preLvalue: STAR expr # lvalueDeref
       ;
 
 return_stmt: RETURN expr? ';' ;

@@ -49,7 +49,7 @@ class IrGenVisitor : public ifccBaseVisitor {
     std::any visitLvaluePar(ifccParser::LvalueParContext *ctx) override { return visit(ctx->lvalue()); }
 
     std::any visitBinaryOp(ifccParser::ExprContext* left, ifccParser::ExprContext* right, ir::BinaryOpKind op, bool comp = false);
-    std::any visitPointerBinaryOp(ir::Local left, ir::Local right, ir::BinaryOpKind op);
+    ir::Local visitPointerBinaryOp(ir::Local left, ir::Local right, ir::BinaryOpKind op);
     std::any visitUnaryOp(ifccParser::ExprContext* operand, ir::UnaryOpKind op, bool comp = false);
 
     std::any visitSimpleType(ifccParser::SimpleTypeContext *ctx) override;
