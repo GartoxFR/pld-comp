@@ -70,6 +70,12 @@ namespace ir {
         }
 
         StringLiteral newLiteral(std::string literal) {
+            for (size_t i = 0; i < m_literals.size(); i++) {
+                if (literal == m_literals[i]) {
+                    return StringLiteral(i);
+                }
+            }
+
             StringLiteral res(m_literals.size());
             m_literals.push_back(std::move(literal));
             return res;
