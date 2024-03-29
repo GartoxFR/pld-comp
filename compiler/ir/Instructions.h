@@ -43,6 +43,10 @@ namespace ir {
 
         bool operator==(const Local& other) const { return m_id == other.m_id; }
 
+        void setType(const Type* type) {
+            m_type = type;
+        }
+
         std::strong_ordering operator<=>(const Local& other) const { return m_id <=> other.m_id; }
 
         friend inline std::ostream& operator<<(std::ostream& out, const Local& self) { return out << "_" << self.id(); }
@@ -63,6 +67,10 @@ namespace ir {
         int16_t value16() const { return m_value; }
 
         auto type() const { return m_type; }
+
+        void setType(const Type* type) {
+            m_type = type;
+        }
 
         bool operator==(const Immediate& immediate) const { return immediate.m_value == m_value; }
 

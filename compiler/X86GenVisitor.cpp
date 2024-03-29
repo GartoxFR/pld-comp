@@ -244,7 +244,8 @@ void X86GenVisitor::emitCmp(std::string_view instructionSuffix, const ir::Binary
 
     emit("cmp", suffix, binaryOp.right(), sourceReg);
 
-    if (m_currentBlock->instructions().back().get() == &binaryOp && !m_livenessAnalysis[m_currentBlock].second.contains(binaryOp.destination())) {
+    if (m_currentBlock->instructions().back().get() == &binaryOp &&
+        !m_livenessAnalysis[m_currentBlock].second.contains(binaryOp.destination())) {
         ConditionalJump* jump = dynamic_cast<ConditionalJump*>(m_currentBlock->terminator().get());
         if (jump) {
             if (std::holds_alternative<Local>(jump->condition()) &&
@@ -349,7 +350,8 @@ void X86GenVisitor::visit(ir::UnaryOp& unaryOp) {
 
             emit("test", sourceReg, sourceReg);
 
-            if (m_currentBlock->instructions().back().get() == &unaryOp && !m_livenessAnalysis[m_currentBlock].second.contains(unaryOp.destination())) {
+            if (m_currentBlock->instructions().back().get() == &unaryOp &&
+                !m_livenessAnalysis[m_currentBlock].second.contains(unaryOp.destination())) {
                 ConditionalJump* jump = dynamic_cast<ConditionalJump*>(m_currentBlock->terminator().get());
                 if (jump) {
                     if (std::holds_alternative<Local>(jump->condition()) &&
@@ -484,11 +486,13 @@ void X86GenVisitor::visit(ir::Cast& cast) {
     } else {
         auto suffix = getSuffix(destinationType->size());
         auto optionalReg = variableRegister(cast.destination());
+        RValue source = cast.source();
+        std::visit([&](auto& source) { source.setType(destinationType); }, source);
         if (optionalReg) {
             reg.reg = optionalReg.value();
-            emit("mov", suffix, cast.source(), reg);
+            emit("mov", suffix, source, reg);
         } else {
-            emit("mov", suffix, cast.source(), reg);
+            emit("mov", suffix, source, reg);
             emit("mov", suffix, reg, cast.destination());
         }
     }
