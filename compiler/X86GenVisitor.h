@@ -42,6 +42,11 @@ struct Deref {
     SizedRegister reg;
 };
 
+struct DerefOffset {
+    SizedRegister reg;
+    int offset;
+};
+
 struct Label {
     std::string_view label;
 };
@@ -184,6 +189,12 @@ class X86GenVisitor : public ir::Visitor {
     void emitArg(const Deref& arg) {
         std::stringstream ss;
         ss << "(" << registerLabel(arg.reg) << ")";
+        m_currentInstruction->push_back(ss.str());
+    }
+
+    void emitArg(const DerefOffset& arg) {
+        std::stringstream ss;
+        ss << arg.offset << "(" << registerLabel(arg.reg) << ")";
         m_currentInstruction->push_back(ss.str());
     }
 

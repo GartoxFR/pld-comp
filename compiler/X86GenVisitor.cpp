@@ -43,7 +43,7 @@ void X86GenVisitor::visit(ir::Function& function) {
 
     std::cerr << function.name() << ": " << std::endl;
 
-    std::vector<Register> usableRegisters{Register::R8,  Register::R9,  Register::RBX, Register::R12,
+    std::vector<Register> usableRegisters{Register::R10,  Register::R11,  Register::RBX, Register::R12,
                                           Register::R13, Register::R14, Register::R15};
 
     RegisterAllocationResult registerAllocation =
@@ -60,7 +60,8 @@ void X86GenVisitor::visit(ir::Function& function) {
 
         if (localId > 0 && localId <= function.argCount() && localId <= ARGS_IN_REGISTER) {
             // We might me able to let this argument in his register
-            bool possible = true;
+            Register possibleReg = CALL_REGISTER[localId - 1];
+            bool possible = possibleReg != Register::RDX && possibleReg != Register::RCX;
             for (const auto& [key, pair] : m_localsUsedThroughCalls) {
                 if (pair.first.contains(local)) {
                     possible = false;
@@ -68,7 +69,7 @@ void X86GenVisitor::visit(ir::Function& function) {
             }
 
             if (possible) {
-                m_localsInRegister.insert({local, CALL_REGISTER[localId - 1]});
+                m_localsInRegister.insert({local, possibleReg});
                 continue;
             }
         }
@@ -109,12 +110,33 @@ void X86GenVisitor::visit(ir::Function& function) {
         m_stackAlignment += m_localsOnStack.size();
     }
 
-    for (size_t i = 0; i < function.argCount(); i++) {
+    for (size_t i = 0; i < function.argCount() && i < ARGS_IN_REGISTER; i++) {
         auto type = function.locals()[i + 1].type();
         auto suffix = getSuffix(type->size());
         SizedRegister reg = {CALL_REGISTER[i], type->size()};
         Local local(i + 1, type);
+        if (!m_livenessAnalysis[function.prologue()].first.contains(local)) {
+            continue;
+        }
         emit("mov", suffix, reg, local);
+    }
+
+    for (size_t i = ARGS_IN_REGISTER; i < function.argCount(); i++) {
+        auto type = function.locals()[i + 1].type();
+        auto suffix = getSuffix(type->size());
+        Local local(i + 1, type);
+        if (!m_livenessAnalysis[function.prologue()].first.contains(local)) {
+            continue;
+        }
+        auto optionalReg = variableRegister(local);
+        DerefOffset argLocation(SizedRegister{Register::RSP, 8}, (i - ARGS_IN_REGISTER + m_stackAlignment) * 8);
+        if (optionalReg.has_value()) {
+            emit("mov", suffix, argLocation, SizedRegister(optionalReg.value(), type->size()));
+        } else {
+            SizedRegister rax(Register::RAX, type->size());
+            emit("mov", suffix, argLocation, rax);
+            emit("mov", suffix, rax, local);
+        }
     }
 
     bool adjustAlignment = m_stackAlignment % 2 == 1 && m_localsUsedThroughCalls.size() != 0;
@@ -203,7 +225,6 @@ void X86GenVisitor::emitSimpleArithmetic(std::string_view instruction, const Bin
 }
 
 void X86GenVisitor::emitSimpleArithmeticCommutative(std::string_view instruction, const ir::BinaryOp& binaryOp) {
-
     auto size = binaryOp.destination().type()->size();
     SizedRegister reg = {Register::RAX, size};
     auto suffix = getSuffix(size);
@@ -228,7 +249,6 @@ void X86GenVisitor::emitSimpleArithmeticCommutative(std::string_view instruction
 }
 
 void X86GenVisitor::emitCmp(std::string_view instructionSuffix, const ir::BinaryOp& binaryOp) {
-
     auto operandSize = std::visit([](auto val) { return val.type()->size(); }, binaryOp.left());
     SizedRegister rax = {Register::RAX, operandSize};
     auto suffix = getSuffix(operandSize);
@@ -432,7 +452,7 @@ void X86GenVisitor::visit(ir::Call& call) {
         }
     }
 
-    for (size_t i = 0; i < call.args().size(); i++) {
+    for (size_t i = 0; i < call.args().size() && i < ARGS_IN_REGISTER; i++) {
         RValue arg = call.args()[i];
         auto type = std::visit([](auto val) { return val.type(); }, arg);
         auto suffix = getSuffix(type->size());
@@ -440,11 +460,33 @@ void X86GenVisitor::visit(ir::Call& call) {
         emit("mov", suffix, arg, reg);
     }
 
+    if (call.args().size() > ARGS_IN_REGISTER) {
+        m_stackAlignment += call.args().size() - ARGS_IN_REGISTER;
+    }
+
     bool alignmentCorrection = m_stackAlignment % 2 == 1;
 
     if (alignmentCorrection) {
         emit("pushq", SizedRegister{Register::RCX, 8});
     }
+
+    for (int i = call.args().size() - 1; i >= (int) ARGS_IN_REGISTER; i--) {
+        std::cerr << i << " " << call.args().size() << std::endl;
+        RValue arg = call.args()[i];
+        auto type = std::visit([](auto val) { return val.type(); }, arg);
+        auto suffix = getSuffix(type->size());
+
+        SizedRegister rax{Register::RAX, 8};
+        SizedRegister ax{Register::RAX, type->size()};
+        auto optionalReg = rvalueRegister(arg);
+        if (optionalReg) {
+            emit("pushq", SizedRegister(optionalReg.value(), 8));
+        } else {
+            emit("mov", suffix, arg, ax);
+            emit("pushq", rax);
+        }
+    }
+
 
     if (call.variadic()) {
         emit("movq", Immediate(0, types::LONG), SizedRegister(Register::RAX, 8));
@@ -454,6 +496,11 @@ void X86GenVisitor::visit(ir::Call& call) {
 
     if (alignmentCorrection) {
         emit("popq", SizedRegister{Register::RCX, 8});
+    }
+
+    for (size_t i = ARGS_IN_REGISTER; i < call.args().size(); i++) {
+        emit("popq", SizedRegister(Register::RCX, 8));
+        m_stackAlignment--;
     }
 
     if (call.destination().type()->size() > 0) {
