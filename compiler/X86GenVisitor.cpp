@@ -136,8 +136,10 @@ void X86GenVisitor::visit(ir::Function& function) {
     }
 
     SizedRegister rax{Register::RAX, function.returnLocal().type()->size()};
-    auto suffix = getSuffix(function.returnLocal().type()->size());
-    emit("mov", suffix, function.returnLocal(), rax);
+    if (function.returnLocal().type()->size() > 0) {
+        auto suffix = getSuffix(function.returnLocal().type()->size());
+        emit("mov", suffix, function.returnLocal(), rax);
+    }
 
     if (needStack) {
         emit("movq", SizedRegister(Register::RBP, 8), SizedRegister(Register::RSP, 8));
