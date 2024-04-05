@@ -31,3 +31,6 @@ make test -j    # Build the project and execute the tests
 
 # Options available
 -O0 to get rid of all optimizations done by the compiler 
+
+
+More technical details are available in the slides provided in the PDF
