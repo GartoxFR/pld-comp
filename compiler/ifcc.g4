@@ -45,8 +45,10 @@ expr: IDENT '(' (expr (',' expr)*)? ')' # call
     ;
 
 lvalue : postLvalue | preLvalue ;
+
 postLvalue: IDENT # lvalueVar
           | IDENT '[' expr ']' # lvalueIndex
+          | '(' expr ')' '[' expr ']' # lvalueIndexPar
           | '(' lvalue ')' # lvaluePar
           ;
 

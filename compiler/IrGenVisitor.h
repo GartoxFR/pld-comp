@@ -58,6 +58,7 @@ class IrGenVisitor : public ifccBaseVisitor {
     std::any visitLvalueVar(ifccParser::LvalueVarContext *ctx) override;
     std::any visitLvalueDeref(ifccParser::LvalueDerefContext *ctx) override;
     std::any visitLvalueIndex(ifccParser::LvalueIndexContext *ctx) override;
+    std::any visitLvalueIndexPar(ifccParser::LvalueIndexParContext *ctx) override;
     std::any visitAddressOf(ifccParser::AddressOfContext *ctx) override;
 
     ir::Local emitCast(ir::Local source, const Type* targetType);

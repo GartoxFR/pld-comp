@@ -705,3 +705,17 @@ std::any IrGenVisitor::visitLvalueIndex(ifccParser::LvalueIndexContext* ctx) {
 
     return LValueResult{std::any_cast<Local>(visitPointerBinaryOp(local, right, BinaryOpKind::ADD)), true};
 }
+
+std::any IrGenVisitor::visitLvalueIndexPar(ifccParser::LvalueIndexParContext *ctx) {
+    auto local = std::any_cast<Local>(visit(ctx->expr(0)));
+
+    if (!local.type()->isPtr()) {
+        m_error = true;
+        std::cerr << "Could not index type " << local.type()->name() << std::endl;
+        return LValueResult{m_currentFunction->invalidLocal(), true};
+    }
+
+    auto right = std::any_cast<Local>(visit(ctx->expr(1)));
+
+    return LValueResult{std::any_cast<Local>(visitPointerBinaryOp(local, right, BinaryOpKind::ADD)), true};
+}
