@@ -3,7 +3,7 @@
 \usetheme{Madrid}
 
 \title[Projet compilation]{Projet compilation}
-\author[Hexanomnom]{Théo Choné, Ewan Chorynski, Clément Vial, Clément Giraudon, Noham Martin, Zyad Haddad}
+\author[Hexanomnom]{Théo Choné, Ewan Chorynski, Clément Giraudon \\ Zyad Haddad, Noham Martin, Clément Vial}
 \institute[INSA Lyon]{INSA Lyon}
 \date{2024}
 \logo{\includegraphics[width=1cm]{logo.png}}
@@ -67,8 +67,6 @@ xleftmargin=2em,frame=single,framexleftmargin=1.5em
     \end{center}
 \end{frame}
 
-
-
 \section{Représentation intermédiaire}
 
 \begin{frame}
@@ -77,8 +75,8 @@ xleftmargin=2em,frame=single,framexleftmargin=1.5em
 
     \begin{block}{Control flow graph}
         \begin{itemize}
-            \item Classe \lstinline{Function}
-            \item Liste de \lstinline{BasicBlock}
+            \item Classe \lstinline{Function} (\lstinline{ir/Function.h})
+            \item Liste de \lstinline{BasicBlock} 
             \item Blocs spéciaux : prologue et épilogues
             \item Informations propres à une fonction
         \end{itemize}
@@ -86,8 +84,8 @@ xleftmargin=2em,frame=single,framexleftmargin=1.5em
     \pause
     \begin{block}{Bloc basique}
         \begin{itemize}
-            \item Classe \lstinline{BasicBlock}
-            \item Liste d'\lstinline{Instruction}
+            \item Classe \lstinline{BasicBlock} (\lstinline{ir/BasicBlock.h})
+            \item Liste d'\lstinline{Instruction} 
             \item Un \lstinline{Terminator}
         \end{itemize}
     \end{block}
@@ -149,7 +147,7 @@ xleftmargin=2em,frame=single,framexleftmargin=1.5em
     \frametitle{Représentation intermédiaire}
     \framesubtitle{Les instructions}
     \begin{itemize}
-        \item Descendants de la classe \lstinline{Instruction}
+        \item Descendants de la classe \lstinline{Instruction} (\lstinline{ir/Instructions.h})
         \item Instruction simple $\leftrightarrow$ pas de saut
     \end{itemize}
     \pause
@@ -182,7 +180,7 @@ xleftmargin=2em,frame=single,framexleftmargin=1.5em
     \frametitle{Représentation intermédiaire}
     \framesubtitle{Les instructions terminales}
     \begin{itemize}
-        \item Descendants de la classe \lstinline{Terminator}
+        \item Descendants de la classe \lstinline{Terminator} (\lstinline{ir/Terminators.h})
         \item Instructions de saut pour terminer un bloc
     \end{itemize}
     \pause
@@ -224,9 +222,21 @@ int main(){
     return y;
 }
             \end{lstlisting}
+            La génération de graphe se fait à l'aide de la classe /lstinline{IrGraphVisitor.h}
         \end{column}
     \end{columns}
 
+\end{frame}
+\begin{frame}
+    \frametitle{Visite de l'IR}
+    \framesubtitle{Parcours}
+    \begin{block}{Design pattern Visiteur}
+        \begin{itemize}
+            \item On utilise le design pattern Visiteur pour parcourir notre IR 
+            \item Utilisation de la classe Visitor (\lstinline{ir/Visitor.h})
+            \item Les classes \lstinline{Function}, \lstinline{BasicBlock}, \lstinline{Instructions} et \lstinline{Terminators} implémentent tous l'interface Visitable (\lstinline{ir/Visitable.h})
+        \end{itemize}
+    \end{block}
 \end{frame}
 
 \section{Optimisations sur l'IR}
@@ -312,7 +322,7 @@ _5 := 5 + _6
     \end{block}
     \pause
     \begin{block}{Analyse du dataflow}
-        On va calculer les variables connues à la fin de chaque bloc afin de les propager au bloc suivant
+        On va calculer les variables connues à la fin de chaque bloc afin de les propager au bloc suivant (classe \lstinline{BlockLivenessAnalysis.h})
     \end{block}
 
     \pause
@@ -353,8 +363,9 @@ _5 := 5 + _6
     \begin{block}{Principe}
         On sent bien qu'après la propagation, des variables assignées ne seront plus
         utilisées : on peut donc les éliminer. En pratique, on parcourt un bloc
-        à l'envers en marquant les variables utilisées comme vivantes et les variables 
-        inutilisées comme mortes.
+        à l'envers (visiteur /lstinline{BlockDependance.h}) en marquant les variables 
+        utilisées comme vivantes et les variables inutilisées comme mortes.
+
     \end{block}
     \pause
     \begin{exampleblock}{Exemple}
@@ -488,6 +499,12 @@ _2 := anything
         \end{itemize}
         
     \end{block}
+\end{frame}
+
+\section{Génération de code}
+
+\begin{frame}
+
 \end{frame}
 
 \end{document}
