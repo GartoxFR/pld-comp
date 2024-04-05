@@ -1,9 +1,12 @@
 #pragma once
 
 #include "BlockLivenessAnalysis.h"
+#include "InterferenceGraph.h"
+#include "PointedLocalGatherer.h"
 #include "ir/Instructions.h"
 #include "ir/Ir.h"
 #include <ostream>
+#include <set>
 #include <sstream>
 #include <unordered_map>
 
@@ -114,7 +117,8 @@ inline bool preserved(Register reg) {
 
 class X86GenVisitor : public ir::Visitor {
   public:
-    X86GenVisitor(std::ostream& out) : m_out(out) {}
+    X86GenVisitor(std::ostream& out, bool doRegisterAllocation) :
+        m_out(out), m_doRegisterAllocation(doRegisterAllocation) {}
 
     void visit(ir::Function& function) override;
     void visit(ir::BasicBlock& block) override;
@@ -216,6 +220,10 @@ class X86GenVisitor : public ir::Visitor {
 
     void printAsm();
 
+    std::set<Register> registerAllocation(
+        const ir::Function& function, const PointedLocals& pointerLocals, const InterferenceGraph& interferenceGraph
+    );
+
   private:
     std::ostream& m_out;
     ir::Function* m_currentFunction;
@@ -231,6 +239,8 @@ class X86GenVisitor : public ir::Visitor {
 
     // Number of 8 byte pushed on the stack since the call
     size_t m_stackAlignment = 0;
+
+    bool m_doRegisterAllocation;
 
     void loadEax(const ir::Local& local) { m_out << "    movl    " << variableLocation(local) << ", %eax\n"; }
     void loadEax(const ir::Immediate& immediate) { m_out << "    movl    $" << immediate.value32() << ", %eax\n"; }

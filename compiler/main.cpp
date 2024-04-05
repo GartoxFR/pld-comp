@@ -3,6 +3,7 @@
 #include <optional>
 #include <sstream>
 #include <cstdlib>
+#include <string_view>
 #include <variant>
 
 #include "BlockDependance.h"
@@ -30,6 +31,41 @@
 using namespace antlr4;
 using namespace std;
 
+static void performOptimizations(ir::Function& function) {
+        bool changed;
+        do {
+            PointedLocals pointedLocals = computePointedLocals(function);
+
+            IrValuePropagationVisitor propagator{pointedLocals};
+            propagator.visit(function);
+
+            DependanceMap dependanceMap = computeDependanceMap(function);
+            BlockLivenessAnalysis livenessAnalysis = computeBlockLivenessAnalysis(function, dependanceMap);
+
+            DeadCodeElimination deadCodeElimination{livenessAnalysis, pointedLocals};
+            deadCodeElimination.visit(function);
+
+            ConstantFoldingVisitor folding;
+            folding.visit(function);
+
+            livenessAnalysis = computeBlockLivenessAnalysis(function, dependanceMap);
+            TwoStepAssignmentEliminationVisitor elimination{livenessAnalysis, pointedLocals};
+            elimination.visit(function);
+
+            // Recompute dependance map as it may have changed
+            dependanceMap = computeDependanceMap(function);
+
+            EmptyBlockEliminationVisitor emptyBlockElimination{dependanceMap};
+            emptyBlockElimination.visit(function);
+
+            BlockReorderingVisitor blockReordering;
+            blockReordering.visit(function);
+
+            changed = propagator.changed() || deadCodeElimination.changed() || folding.changed() ||
+                emptyBlockElimination.changed() || blockReordering.changed() || elimination.changed();
+        } while (changed);
+}
+
 int main(int argn, const char** argv) {
     stringstream in;
     if (argn >= 2) {
@@ -42,6 +78,14 @@ int main(int argn, const char** argv) {
     } else {
         cerr << "usage: ifcc path/to/file.c" << endl;
         exit(1);
+    }
+
+    bool optimize = true;
+    for (int i = 1; i < argn; i++) {
+        std::string_view arg = argv[i];
+        if (arg == "-O0") {
+            optimize = false;
+        }
     }
 
     ANTLRInputStream input(in.str());
@@ -70,42 +114,14 @@ int main(int argn, const char** argv) {
     }
 
     IrPrintVisitor printer(cerr);
-    X86GenVisitor gen(cout);
+    X86GenVisitor gen(cout, optimize);
     for (auto& function : visitor.functions()) {
         ofstream file(function->name() + ".dot");
         IrGraphVisitor cfg(file);
-        bool changed;
-        do {
-            PointedLocals pointedLocals = computePointedLocals(*function);
 
-            IrValuePropagationVisitor propagator{pointedLocals};
-            propagator.visit(*function);
-
-            DependanceMap dependanceMap = computeDependanceMap(*function);
-            BlockLivenessAnalysis livenessAnalysis = computeBlockLivenessAnalysis(*function, dependanceMap);
-
-            DeadCodeElimination deadCodeElimination{livenessAnalysis, pointedLocals};
-            deadCodeElimination.visit(*function);
-
-            ConstantFoldingVisitor folding;
-            folding.visit(*function);
-
-            livenessAnalysis = computeBlockLivenessAnalysis(*function, dependanceMap);
-            TwoStepAssignmentEliminationVisitor elimination{livenessAnalysis, pointedLocals};
-            elimination.visit(*function);
-
-            // Recompute dependance map as it may have changed
-            dependanceMap = computeDependanceMap(*function);
-
-            EmptyBlockEliminationVisitor emptyBlockElimination{dependanceMap};
-            emptyBlockElimination.visit(*function);
-
-            BlockReorderingVisitor blockReordering;
-            blockReordering.visit(*function);
-
-            changed = propagator.changed() || deadCodeElimination.changed() || folding.changed() ||
-                emptyBlockElimination.changed() || blockReordering.changed() || elimination.changed();
-        } while (changed);
+        if (optimize) {
+            performOptimizations(*function);
+        }
 
         LocalRenamingVisitor localRenaming;
         localRenaming.visit(*function);

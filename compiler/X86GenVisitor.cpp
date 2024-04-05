@@ -21,29 +21,10 @@ static constexpr Register CALL_REGISTER[ARGS_IN_REGISTER] = {
     Register::RDI, Register::RSI, Register::RDX, Register::RCX, Register::R8, Register::R9,
 };
 
-void X86GenVisitor::visit(ir::Function& function) {
-    m_currentFunction = &function;
-    m_localsInRegister.clear();
-    m_localsOnStack.clear();
-    m_instructions.clear();
-
-    // When we are called, there is the return address pushed
-    m_stackAlignment = 1;
-
-    PointedLocals pointedLocals = computePointedLocals(function);
-    DependanceMap dependanceMap = computeDependanceMap(function);
-    InterferenceGraph interferenceGraph{function.locals().size()};
-    m_localsUsedThroughCalls.clear();
-    // Compute the interferenceGraph using the block liveness analysis
-    m_livenessAnalysis =
-        computeBlockLivenessAnalysis(function, dependanceMap, &interferenceGraph, &m_localsUsedThroughCalls);
-
-    std::ofstream debugFile(function.name() + ".ig.dot");
-    interferenceGraph.printDot(debugFile);
-
-    std::cerr << function.name() << ": " << std::endl;
-
-    std::vector<Register> usableRegisters{Register::R10,  Register::R11,  Register::RBX, Register::R12,
+std::set<Register> X86GenVisitor::registerAllocation(
+    const ir::Function& function, const PointedLocals& pointedLocals, const InterferenceGraph& interferenceGraph
+) {
+    std::vector<Register> usableRegisters{Register::R10, Register::R11, Register::RBX, Register::R12,
                                           Register::R13, Register::R14, Register::R15};
 
     RegisterAllocationResult registerAllocation =
@@ -85,6 +66,43 @@ void X86GenVisitor::visit(ir::Function& function) {
         m_localsOnStack.insert({local, stackPos});
         stackPos += 8;
     }
+    return usedRegisters;
+}
+
+void X86GenVisitor::visit(ir::Function& function) {
+    m_currentFunction = &function;
+    m_localsInRegister.clear();
+    m_localsOnStack.clear();
+    m_instructions.clear();
+
+    // When we are called, there is the return address pushed
+    m_stackAlignment = 1;
+
+    PointedLocals pointedLocals = computePointedLocals(function);
+    DependanceMap dependanceMap = computeDependanceMap(function);
+    InterferenceGraph interferenceGraph{function.locals().size()};
+    m_localsUsedThroughCalls.clear();
+    // Compute the interferenceGraph using the block liveness analysis
+    m_livenessAnalysis =
+        computeBlockLivenessAnalysis(function, dependanceMap, &interferenceGraph, &m_localsUsedThroughCalls);
+
+
+    std::set<Register> usedRegisters;
+    if(m_doRegisterAllocation) {
+        usedRegisters = registerAllocation(function, pointedLocals, interferenceGraph);
+    } else {
+        size_t stackPos = 8;
+        for (size_t i = 0; i < function.locals().size(); i++) {
+            Local local(i, function.locals()[i].type());
+            m_localsOnStack.insert({local, stackPos});
+            stackPos += 8;
+        }
+    }
+
+    std::ofstream debugFile(function.name() + ".ig.dot");
+    interferenceGraph.printDot(debugFile);
+
+    std::cerr << function.name() << ": " << std::endl;
 
     bool needStack = !m_localsOnStack.empty();
 
@@ -470,7 +488,7 @@ void X86GenVisitor::visit(ir::Call& call) {
         emit("pushq", SizedRegister{Register::RCX, 8});
     }
 
-    for (int i = call.args().size() - 1; i >= (int) ARGS_IN_REGISTER; i--) {
+    for (int i = call.args().size() - 1; i >= (int)ARGS_IN_REGISTER; i--) {
         std::cerr << i << " " << call.args().size() << std::endl;
         RValue arg = call.args()[i];
         auto type = std::visit([](auto val) { return val.type(); }, arg);
@@ -486,7 +504,6 @@ void X86GenVisitor::visit(ir::Call& call) {
             emit("pushq", rax);
         }
     }
-
 
     if (call.variadic()) {
         emit("movq", Immediate(0, types::LONG), SizedRegister(Register::RAX, 8));
