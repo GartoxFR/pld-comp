@@ -99,8 +99,9 @@ void X86GenVisitor::visit(ir::Function& function) {
         }
     }
 
-    std::ofstream debugFile(function.name() + ".ig.dot");
-    interferenceGraph.printDot(debugFile);
+    // Used to generate interferenceGraph to debug
+    // std::ofstream debugFile(function.name() + ".ig.dot");
+    // interferenceGraph.printDot(debugFile);
 
     std::cerr << function.name() << ": " << std::endl;
 
