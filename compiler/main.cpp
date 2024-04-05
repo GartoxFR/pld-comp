@@ -81,10 +81,13 @@ int main(int argn, const char** argv) {
     }
 
     bool optimize = true;
+    bool silent = false;
     for (int i = 1; i < argn; i++) {
         std::string_view arg = argv[i];
         if (arg == "-O0") {
             optimize = false;
+        } else if (arg == "-s") {
+            silent = true;
         }
     }
 
@@ -126,8 +129,11 @@ int main(int argn, const char** argv) {
         LocalRenamingVisitor localRenaming;
         localRenaming.visit(*function);
 
-        printer.visit(*function);
-        cfg.visit(*function);
+        if (!silent) {
+            printer.visit(*function);
+            cfg.visit(*function);
+        }
+
         gen.visit(*function);
     }
 
