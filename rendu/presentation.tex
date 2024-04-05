@@ -3,7 +3,7 @@
 \usetheme{Madrid}
 
 \title[Projet compilation]{Projet compilation}
-\author[Hexanomnom]{Hexanomnom}
+\author[Hexanomnom]{Théo Choné, Ewan Chorynski, Clément Vial, Clément Giraudon, Noham Martin, Zyad Haddad}
 \institute[INSA Lyon]{INSA Lyon}
 \date{2024}
 \logo{\includegraphics[width=1cm]{logo.png}}
@@ -37,8 +37,34 @@ xleftmargin=2em,frame=single,framexleftmargin=1.5em
 \frame{\titlepage}
 
 \begin{frame}
-    \frametitle{Table of contents}
+    \frametitle{Table des matières}
     \tableofcontents
+\end{frame}
+
+\section{Fonctionnalités implémentées}
+
+\begin{frame}
+    \frametitle{Fonctionnalités implémentées}
+    \framesubtitle{Fonctionnalités obligatoires}
+    \begin{center}
+        \includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{fonctionnalite1.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Fonctionnalités implémentées}
+    \framesubtitle{Fonctionnalités facultatives}
+    \begin{center}
+        \includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{fonctionnalite2.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Fonctionnalités implémentées}
+    \framesubtitle{Fonctionnalités bonus}
+    \begin{center}
+        \includegraphics[width=\textwidth,height=0.8\textheight,keepaspectratio]{fonctionnalite3.png}
+    \end{center}
 \end{frame}
 
 
@@ -75,7 +101,7 @@ xleftmargin=2em,frame=single,framexleftmargin=1.5em
             \item Classe \lstinline{Local}
             \item Possède un type
             \item Simplement un ID, noté \local{i}
-            \item La variable locale \local{0} stock la valeur de retour
+            \item La variable locale \local{0} stocke la valeur de retour
             \item Les variables suivantes stockent d'abord les arguments (\local{1} est le premier argument)
         \end{itemize}
     \end{block}
@@ -101,14 +127,14 @@ xleftmargin=2em,frame=single,framexleftmargin=1.5em
         \end{itemize}
     \end{block}
     \pause
-    \begin{block}{Les chaines de caractère litéral}
+    \begin{block}{Les chaînes de caractères litérales}
         \begin{itemize}
             \item Classe \lstinline{StringLiteral}
-            \item Représente une chaine de caractère qui sera dans l'exécutable
+            \item Représente une chaîne de caractères qui sera dans l'exécutable
         \end{itemize}
     \end{block}
     \pause
-    \begin{block}{Les éléments dont on peut prendre l'addresse}
+    \begin{block}{Les éléments dont on peut prendre l'adresse}
         \begin{itemize}
             \item Classe \lstinline{Addressable}
             \item Représente soit une \lstinline{Local} soit une \lstinline{StringLiteral}
@@ -142,11 +168,11 @@ xleftmargin=2em,frame=single,framexleftmargin=1.5em
         \hline
         Cast & local := (type) rvalue & Changement de taille \pause \\
         \hline
-        PointerRead & local := *rvalue & Lecture de pointer \pause \\
+        PointerRead & local := *rvalue & Lecture de pointeur \pause \\
         \hline
         PointerWrite & *rvalue := rvalue & Écriture de pointeur \pause \\
         \hline
-        AddressOf & local := \&addressable & Stockage d'une addresse\\
+        AddressOf & local := \&addressable & Stockage d'une adresse\\
         \hline
         \end{tabular}
     \end{center}
@@ -157,7 +183,7 @@ xleftmargin=2em,frame=single,framexleftmargin=1.5em
     \framesubtitle{Les instructions terminales}
     \begin{itemize}
         \item Descendants de la classe \lstinline{Terminator}
-        \item Instructions de saut pour terminer un block
+        \item Instructions de saut pour terminer un bloc
     \end{itemize}
     \pause
     \begin{block}{Saut basique}
@@ -167,7 +193,7 @@ xleftmargin=2em,frame=single,framexleftmargin=1.5em
         \end{itemize}
     \end{block}
     \pause
-    \begin{block}{Saut conditionelle}
+    \begin{block}{Saut conditionel}
         \begin{itemize}
             \item Classe \lstinline{ConditionalJump}
             \item Deux blocs de destination
@@ -282,11 +308,11 @@ _5 := 5 + _6
     \framesubtitle{Version analyse du dataflow}
 
     \begin{block}{Limite de la version simple}
-        Connaissances limités au sain d'un bloc $\rightarrow$ fonctionne beaucoup moins bien lorsqu'il y a des branches
+        Connaissances limitées au sein d'un bloc $\rightarrow$ fonctionne beaucoup moins bien lorsqu'il y a des branches
     \end{block}
     \pause
     \begin{block}{Analyse du dataflow}
-        On va calculer les variables connus à la fin de chaque bloc afin de les propager au bloc suivant
+        On va calculer les variables connues à la fin de chaque bloc afin de les propager au bloc suivant
     \end{block}
 
     \pause
@@ -325,14 +351,14 @@ _5 := 5 + _6
     \framesubtitle{Principe}
     
     \begin{block}{Principe}
-        On sent bien qu'après la propagation, des variables assigné ne seront plus
-        utilisé. On peut éliminer ces variables. En pratique, on parcourt un bloc
-        à l'envers en marquant les variables utilisés comme vivante et les variables 
-        inutilisés comme mortes.
+        On sent bien qu'après la propagation, des variables assignées ne seront plus
+        utilisées : on peut donc les éliminer. En pratique, on parcourt un bloc
+        à l'envers en marquant les variables utilisées comme vivantes et les variables 
+        inutilisées comme mortes.
     \end{block}
     \pause
     \begin{exampleblock}{Exemple}
-        Imaginons dans l'exemple précédent que seul \lstinline{_5} est utilisé par la suite
+        Imaginons dans l'exemple précédent que seule \lstinline{_5} est utilisée par la suite
          \begin{columns}
             \begin{column}{.40\textwidth}
                     \begin{lstlisting}
@@ -361,21 +387,21 @@ _5 := 5 + _6
     \frametitle{Élimination de code mort}
     \framesubtitle{Analyse de vivacité}
     \begin{alertblock}{Problème}
-        Pour pouvoir affirmer au sein d'un bloc qu'une variable n'est pas utilisé,
-        il faut connaitres les variables utilisés par les blocs suivant. 
+        Pour pouvoir affirmer au sein d'un bloc qu'une variable n'est pas utilisée,
+        il faut connaître les variables utilisées par les blocs suivants. 
     \end{alertblock}
     \pause
     \begin{block}{Solution}
         Comme pour la propagation de constantes, on a besoin de propager les informations
         de vivacité d'un bloc au suivant. Notamment, un bloc propagera les variables
-        vivantes en entrée vers l'ensemble des variables vivantes en sorties de ses
+        vivantes en entrée vers l'ensemble des variables vivantes en sortie de ses
         prédécesseurs.
     \end{block}
     \pause
     \begin{block}{Remarque}
-        En pratique, cette analyse est ensuite très utilisé dans tout le compilateur.
-        Elle génère notamment  le graph d'interférence et collecte les variables qui doivent
-        être préservés à travers les appels de fonction.
+        En pratique, cette analyse est ensuite très utilisée dans tout le compilateur.
+        Elle génère notamment le graphe d'interférence et collecte les variables qui doivent
+        être préservées à travers les appels de fonction.
     \end{block}
 \end{frame}
 
@@ -417,10 +443,10 @@ _3 := 1
 \end{frame}
 
 \begin{frame}[fragile]
-    \frametitle{Autres optimisations implémentés}
+    \frametitle{Autres optimisations implémentées}
     \begin{block}{Optimisation d'assignation inutile}
-        Si \local{1} n'est pas utilisés après la ligne 1 sauf pour une assignation et que \local{2} 
-        n'est pas utilisée entre la ligne 1 et 3:
+        Si \local{1} n'est pas utilisée après la ligne 1 (sauf ligne 3) et que \local{2} 
+        n'est pas utilisée entre la ligne 1 et 3 :
         \begin{columns}
             \begin{column}{.40\textwidth}
                     \begin{lstlisting}
@@ -446,18 +472,18 @@ _2 := anything
         \begin{itemize}
             \item Si on jump vers un bloc vide $A$ qui fait seulement un jump basique $B$, alors on peut jump directement vers un bloc $B$ 
             \item Dans certaines conditions, on peut fusionner avec notre cible
-            \item Autres optimisations de saut conditionels quand la condition est la même.
+            \item Autres optimisations de sauts conditionels quand la condition est la même
         \end{itemize}
     \end{block}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Autres optimisations implémentés}
+    \frametitle{Autres optimisations implémentées}
 
     \begin{block}{Réorganisation des blocs}
         \begin{itemize}
             \item Parcours en profondeur du control flow graph et collecte des blocs parcourus
-            \item Supression des blocs inatteignables
+            \item Suppression des blocs inatteignables
             \item Idée de maximiser les jump directement vers le bloc suivant
         \end{itemize}
         
