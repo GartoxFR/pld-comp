@@ -3,7 +3,7 @@
 \usetheme{Madrid}
 
 \title[Projet compilation]{Projet compilation}
-\author[Hexanomnom]{Théo Choné, Ewan Chorynski, Clément Giraudon \\ Zyad Haddad, Noham Martin, Clément Vial}
+\author[Hexanomnom]{Théo Choné, Ewan Chorynski, Clément Giraudon, Zyad Haddad, Noham Martin, Clément Vial}
 \institute[INSA Lyon]{INSA Lyon}
 \date{2024}
 \logo{\includegraphics[width=1cm]{logo.png}}
@@ -36,10 +36,12 @@ xleftmargin=2em,frame=single,framexleftmargin=1.5em
 
 \frame{\titlepage}
 
-\begin{frame}
-    \frametitle{Table des matières}
-    \tableofcontents
-\end{frame}
+\AtBeginSection[ ] {
+    \begin{frame}
+        \frametitle{Table des matières}
+        \tableofcontents[currentsection]
+    \end{frame}
+}
 
 \section{Fonctionnalités implémentées}
 
@@ -222,7 +224,7 @@ int main(){
     return y;
 }
             \end{lstlisting}
-            La génération de graphe se fait à l'aide de la classe /lstinline{IrGraphVisitor.h}
+            La génération de graphe se fait à l'aide de la classe \lstinline{IrGraphVisitor.h}
         \end{column}
     \end{columns}
 
@@ -363,7 +365,7 @@ _5 := 5 + _6
     \begin{block}{Principe}
         On sent bien qu'après la propagation, des variables assignées ne seront plus
         utilisées : on peut donc les éliminer. En pratique, on parcourt un bloc
-        à l'envers (visiteur /lstinline{BlockDependance.h}) en marquant les variables 
+        à l'envers (visiteur \lstinline{BlockDependance.h}) en marquant les variables 
         utilisées comme vivantes et les variables inutilisées comme mortes.
 
     \end{block}
@@ -504,7 +506,62 @@ _2 := anything
 \section{Génération de code}
 
 \begin{frame}
+    \frametitle{Génération de code}
+    \framesubtitle{Allocation de registre}
 
+    \begin{itemize}
+        \item Génération du graph d'interférence à l'aide de l'analyse de vivacité (\lstinline{InterferenceGraph.h})
+        \item Coloration du graph à l'aide le l'algorithme de Chaitin
+        \item Certains arguments peuvent rester dans leur registre si ils ne sont pas vivants à
+              travers un appel de fonction
+        \item La variable de retour peut rester dans le registre de retour si aucune variable n'est 
+              vivante en même temps
+        \item Implémentation indépendante de l'architecture et utilisable pour un futur
+              reciblage éventuel
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Génération de code}
+    \framesubtitle{Visite de l'IR}
+
+    \begin{itemize}
+        \item Utilisation de \lstinline{X86GenVisitor} pour parcourir séquentiellement l'IR
+        \item Fonction \lstinline{emit} qui permet de rendre la syntaxe moins lourde, surtout
+              avec l'explosion combinatoire des possibilités liés aux différentes tailles d'opérandes
+    \end{itemize}
+    \pause
+    \begin{block}{Optimisation des conditions}
+        Si une variable est assignées par une comparaison est utilisé directement après
+        dans un saut conditionel et qu'elle n'est pas dans la sortie du bloc, alors on
+        peut émettre seulement l'instruction \lstinline{cmp} et émettre le bon saut
+        ensuite, sans passer par une variable booléenne ou par un registre.
+    \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Génération de code}
+    \framesubtitle{Peep hole optimisaztions}
+
+    \begin{block}{Suppression de \lstinline{mov} inutiles}
+        \begin{lstlisting}
+movl %eax, %eax
+        \end{lstlisting}
+    \end{block}
+
+    \begin{block}{Suppression des sauts inutiles}
+        \begin{lstlisting}
+jmp .bb1
+.bb1:
+        \end{lstlisting}
+    \end{block}
+
+    \begin{block}{Suppression des labels inutiles}
+        \begin{itemize}
+            \item Si il n'y a plus aucun saut vers un label, on ne l'emet pas
+            \item Rend l'assembleur plus lisible pour le debug mais aucun gain en performance
+        \end{itemize}
+    \end{block}
 \end{frame}
 
 \end{document}
