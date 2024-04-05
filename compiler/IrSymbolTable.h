@@ -6,6 +6,7 @@
 #include <ranges>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 class IrSymbolTable {
@@ -14,24 +15,31 @@ class IrSymbolTable {
 
     void enterNewLocalScope() { m_localScopeStack.emplace_back(); }
 
-    void exitLocalScope() { m_localScopeStack.pop_back(); }
+    void exitLocalScope() { 
+        auto scope = std::move(m_localScopeStack.back());
+        m_localScopeStack.pop_back(); 
+
+        for (const auto& unusedVariable : scope.second) {
+            std::cerr << "Warning: Variable " << unusedVariable << " not used." << std::endl;
+        }
+    }
 
     void declareLocalVariable(std::string str, ir::Local localVariable) {
         VariableScope& currentScope = m_localScopeStack.back();
 
-        if (currentScope.contains(str)) {
+        if (currentScope.first.contains(str)) {
             m_error = true;
             std::cerr << "Error: Variable " << str << " already declared in this scope." << std::endl;
             return;
         }
-
-        currentScope.insert({std::move(str), localVariable});
+        currentScope.second.insert(str);
+        currentScope.first.insert({std::move(str), localVariable});
     }
 
     ir::Local getLocalVariable(const std::string& str) {
         for (auto& scope : m_localScopeStack | std::views::reverse) {
-            auto it = scope.find(str);
-            if (it != scope.end()) {
+            auto it = scope.first.find(str);
+            if (it != scope.first.end()) {
                 return it->second;
             }
         }
@@ -41,6 +49,16 @@ class IrSymbolTable {
 
         // We return a Local but the IR won't be valid anyway since we have undeclared variables
         return ir::Local{INT32_MAX, types::VOID};
+    }
+
+    void markAsUsed(const std::string& str) {
+        for (auto& scope : m_localScopeStack | std::views::reverse) {
+            auto it = scope.first.find(str);
+            if (it != scope.first.end()) {
+                scope.second.erase(str);
+            }
+        }
+
     }
 
     void declareFunction(const ir::Function& function) {
@@ -74,7 +92,7 @@ class IrSymbolTable {
     }
 
   private:
-    using VariableScope = std::unordered_map<std::string, ir::Local>;
+    using VariableScope = std::pair<std::unordered_map<std::string, ir::Local>, std::unordered_set<std::string>>;
 
     std::vector<VariableScope> m_localScopeStack;
     std::unordered_map<std::string, const ir::Function*> m_functions;

@@ -67,6 +67,13 @@ class IrGenVisitor : public ifccBaseVisitor {
 
     bool hasErrors() const { return m_symbolTable.hasErrors() || m_error; }
 
+    void markAsRead(ir::Local local) {
+        auto nameOpt = m_currentFunction->locals()[local.id()].name();
+        if (nameOpt) {
+            m_symbolTable.markAsUsed(nameOpt.value());
+        }
+    }
+
   private:
     std::vector<std::unique_ptr<ir::Function>> m_functions;
     ir::Function* m_currentFunction;

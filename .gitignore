@@ -29,3 +29,15 @@ ifcc-test-output
 
 # ANTLR
 antlr/
+
+rendu/presentation.aux
+rendu/presentation.fdb_latexmk
+rendu/presentation.fls
+rendu/presentation.log
+rendu/presentation.nav
+rendu/presentation.out
+rendu/presentation.pdf
+rendu/presentation.snm
+rendu/presentation.synctex.gz
+rendu/presentation.toc
+rendu/presentation.vrb

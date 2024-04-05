@@ -162,6 +162,7 @@ std::any IrGenVisitor::visitStringLiteral(ifccParser::StringLiteralContext *ctx)
 std::any IrGenVisitor::visitLvalueExpr(ifccParser::LvalueExprContext* ctx) {
     LValueResult lvalue = std::any_cast<LValueResult>(visit(ctx->lvalue()));
     if (!lvalue.address) {
+        markAsRead(lvalue.local);
         return lvalue.local;
     } else {
         Local res = m_currentFunction->newLocal(lvalue.local.type()->target());
@@ -287,6 +288,7 @@ std::any IrGenVisitor::visitAssign(ifccParser::AssignContext* ctx) {
 
         if (!lvalue.address) {
             auto local = lvalue.local;
+            markAsRead(local);
             if (res.type() != local.type()) {
                 // TODO: Check if this is right semantic
                 res = emitCast(res, local.type());
@@ -539,6 +541,8 @@ std::any IrGenVisitor::visitPreIncrDecrOp(ifccParser::PreIncrDecrOpContext* ctx)
     LValueResult res = std::any_cast<LValueResult>(visit(ctx->lvalue()));
     if (!res.address) {
 
+        markAsRead(res.local);
+
         if (res.local.type()->isPtr()) {
             Local one = m_currentFunction->newLocal(res.local.type());
             m_currentBlock->emit<Assignment>(one, Immediate(1, res.local.type()));
@@ -583,6 +587,8 @@ std::any IrGenVisitor::visitPostIncrDecrOp(ifccParser::PostIncrDecrOpContext* ct
 
     LValueResult res = std::any_cast<LValueResult>(visit(ctx->postLvalue()));
     if (!res.address) {
+
+        markAsRead(res.local);
         Local temp = m_currentFunction->newLocal(res.local.type());
         m_currentBlock->emit<Assignment>(temp, res.local);
         if (res.local.type()->isPtr()) {
