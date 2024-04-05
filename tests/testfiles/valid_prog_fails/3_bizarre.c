@@ -1,7 +1,7 @@
 int doThings(int a) {
     int c = 3;
     while (c % 2 != 0) {
-        c = a + 3;
+        c = a + c;
     }
 
     int j = 39478;
@@ -14,7 +14,7 @@ int main() {
     int b;
 
     while (a > 0) {
-        b = doThings(&a);
+        b = doThings(a);
 
         a -= b;
     }
