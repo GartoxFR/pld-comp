@@ -28,3 +28,6 @@ There is a Makefile at the root of the project to execute common task faster :
 make -j         # Build the project in parallel
 make test -j    # Build the project and execute the tests
 ```
+
+# Options available
+-O0 to get rid of all optimizations done by the compiler 
