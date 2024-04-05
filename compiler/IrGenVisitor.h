@@ -68,6 +68,10 @@ class IrGenVisitor : public ifccBaseVisitor {
     bool hasErrors() const { return m_symbolTable.hasErrors() || m_error; }
 
     void markAsRead(ir::Local local) {
+        if (local.id() >= m_currentFunction->locals().size()) {
+            return;
+        }
+
         auto nameOpt = m_currentFunction->locals()[local.id()].name();
         if (nameOpt) {
             m_symbolTable.markAsUsed(nameOpt.value());
