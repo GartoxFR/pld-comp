@@ -233,6 +233,12 @@ std::any IrGenVisitor::visitWhile(ifccParser::WhileContext* ctx) {
 std::any IrGenVisitor::visitDeclare_stmt(ifccParser::Declare_stmtContext* ctx) {
     auto type = std::any_cast<const Type*>(visit(ctx->type()));
 
+    if (type->isPtr() && ctx->initializer().size() > 1) {
+        std::cerr << "Error: Multiple déclaration of pointers on the same line are forbidden" << std::endl;
+        m_error = true;
+        return 0;
+    }
+
     for (auto initializerCtx : ctx->initializer()) {
 
         std::string ident = initializerCtx->IDENT()->getText();
