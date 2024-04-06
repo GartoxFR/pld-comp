@@ -564,4 +564,57 @@ jmp .bb1
     \end{block}
 \end{frame}
 
+\section{Améliorations possibles}
+
+\begin{frame}[fragile]
+    \frametitle{Améliorations possibles}
+    \framesubtitle{Fonctionnalités non implémentées}
+
+    \begin{block}{Déclaration de plusieurs pointeurs}
+        \begin{lstlisting}
+int *a, *b;
+int *x, y;
+        \end{lstlisting}
+    \end{block}
+    \pause
+
+    \begin{block}{Déclaration de tableaux sur la pile}
+        \begin{lstlisting}
+int a[20];
+        \end{lstlisting}
+        Actuellement, il est seulement possible d'utiliser des tableaux avec malloc.
+    \end{block}
+
+    \pause
+    \begin{block}{Déclaration de fonction}
+        \begin{lstlisting}
+int foo(int bar);
+        \end{lstlisting}
+    \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Améliorations possibles}
+    \framesubtitle{Plus de vérifications à la compilation}
+
+    \begin{block}{Refuser l'utilisation de valeur de type void}
+        \begin{lstlisting}
+void foo() {}
+int main() {
+    int x = foo();
+}
+        \end{lstlisting}
+    \end{block}
+    \pause
+    \begin{block}{Vérifier qu'une variable utilisée est bien initialisée}
+        \begin{lstlisting}
+int main() {
+    int x;
+    return x;
+}
+        \end{lstlisting}
+        
+    \end{block}
+\end{frame}
+
 \end{document}
