@@ -1,0 +1,17 @@
+digraph cfg {
+node [shape = "box"]
+_test_prologue[label = ".test.prologue:\l"]
+_test_prologue -> _test_BB0
+_test_BB0[label = ".test.BB0:\l_3 := 42\l_2 := 42\l"]
+_test_BB0 -> _test_BB1 [label = "_1"]
+_test_BB0 -> _test_BB2 [label = "not _1"]
+_test_BB1[label = ".test.BB1:\l_5 := 3\l_4 := 3\l"]
+_test_BB1 -> _test_BB3
+_test_BB2[label = ".test.BB2:\l_6 := 2\l_4 := 2\l"]
+_test_BB2 -> _test_BB3
+_test_BB3[label = ".test.BB3:\l_7 := 42 + _4\l_0 := _7\l"]
+_test_BB3 -> _test_epilogue
+_test_BB4[label = ".test.BB4:\l"]
+_test_BB4 -> _test_epilogue
+_test_epilogue[label = ".test.epilogue:\l"]
+}
