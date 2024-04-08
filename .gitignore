@@ -41,3 +41,6 @@ rendu/presentation.snm
 rendu/presentation.synctex.gz
 rendu/presentation.toc
 rendu/presentation.vrb
+
+.direnv
+.envrc
